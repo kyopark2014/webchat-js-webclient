@@ -1,0 +1,366 @@
+
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<link rel="apple-touch-icon" type="image/png" href="https://static.codepen.io/assets/favicon/apple-touch-icon-5ae1a0698dcc2402e9712f7d01ed509a57814f994c660df9f7a952f3060705ee.png" />
+<meta name="apple-mobile-web-app-title" content="CodePen">
+<link rel="shortcut icon" type="image/x-icon" href="https://static.codepen.io/assets/favicon/favicon-aec34940fbc1a6e787974dcd360f2c6b63348d4b1f4e06c77743096d55480f33.ico" />
+<link rel="mask-icon" type="" href="https://static.codepen.io/assets/favicon/logo-pin-8f3771b1072e3c38bd662872f6b673a722f4b3ca2421637d5596661b4e2132cc.svg" color="#111" />
+<title>CodePen - WhatsApp Inspired Bootstrap Chat UI Direct Messaging App</title>
+<link rel='stylesheet' href='https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/4.1.3/css/bootstrap.min.css'>
+<link rel='stylesheet' href='https://cdnjs.cloudflare.com/ajax/libs/material-design-icons/3.0.1/iconfont/material-icons.min.css'>
+<style>
+body {
+  background-color: #3498db;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+}
+
+.container {
+  margin: 60px auto;
+  background: #fff;
+  padding: 0;
+  border-radius: 7px;
+}
+
+.profile-image {
+  width: 50px;
+  height: 50px;
+  border-radius: 40px;
+}
+
+.settings-tray {
+  background: #eee;
+  padding: 10px 15px;
+  border-radius: 7px;
+}
+.settings-tray .no-gutters {
+  padding: 0;
+}
+.settings-tray--right {
+  float: right;
+}
+.settings-tray--right i {
+  margin-top: 10px;
+  font-size: 25px;
+  color: grey;
+  margin-left: 14px;
+  transition: .3s;
+}
+.settings-tray--right i:hover {
+  color: #74b9ff;
+  cursor: pointer;
+}
+
+.search-box {
+  background: #fafafa;
+  padding: 10px 13px;
+}
+.search-box .input-wrapper {
+  background: #fff;
+  border-radius: 40px;
+}
+.search-box .input-wrapper i {
+  color: grey;
+  margin-left: 7px;
+  vertical-align: middle;
+}
+
+input {
+  border: none;
+  border-radius: 30px;
+  width: 80%;
+}
+input::placeholder {
+  color: #e3e3e3;
+  font-weight: 300;
+  margin-left: 20px;
+}
+input:focus {
+  outline: none;
+}
+
+.friend-drawer {
+  padding: 10px 15px;
+  display: flex;
+  vertical-align: baseline;
+  background: #fff;
+  transition: .3s ease;
+}
+.friend-drawer--grey {
+  background: #eee;
+}
+.friend-drawer .text {
+  margin-left: 12px;
+  width: 70%;
+}
+.friend-drawer .text h6 {
+  margin-top: 6px;
+  margin-bottom: 0;
+}
+.friend-drawer .text p {
+  margin: 0;
+}
+.friend-drawer .time {
+  color: grey;
+}
+.friend-drawer--onhover:hover {
+  background: #74b9ff;
+  cursor: pointer;
+}
+.friend-drawer--onhover:hover p,
+.friend-drawer--onhover:hover h6,
+.friend-drawer--onhover:hover .time {
+  color: #fff !important;
+}
+
+hr {
+  margin: 5px auto;
+  width: 60%;
+}
+
+.chat-bubble {
+  padding: 10px 14px;
+  background: #eee;
+  margin: 10px 30px;
+  border-radius: 9px;
+  position: relative;
+  animation: fadeIn 1s ease-in;
+}
+.chat-bubble:after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  width: 0;
+  height: 0;
+  border: 20px solid transparent;
+  border-bottom: 0;
+  margin-top: -10px;
+}
+.chat-bubble--left:after {
+  left: 0;
+  border-right-color: #eee;
+  border-left: 0;
+  margin-left: -20px;
+}
+.chat-bubble--right:after {
+  right: 0;
+  border-left-color: #74b9ff;
+  border-right: 0;
+  margin-right: -20px;
+}
+
+@keyframes fadeIn {
+  0% {
+    opacity: 0;
+  }
+  100% {
+    opacity: 1;
+  }
+}
+.offset-md-9 .chat-bubble {
+  background: #74b9ff;
+  color: #fff;
+}
+
+.chat-box-tray {
+  background: #eee;
+  display: flex;
+  align-items: baseline;
+  padding: 10px 15px;
+  align-items: center;
+  margin-top: 19px;
+  bottom: 0;
+}
+.chat-box-tray input {
+  margin: 0 10px;
+  padding: 6px 2px;
+}
+.chat-box-tray i {
+  color: grey;
+  font-size: 30px;
+  vertical-align: middle;
+}
+.chat-box-tray i:last-of-type {
+  margin-left: 25px;
+}
+</style>
+<script>
+  window.console = window.console || function(t) {};
+</script>
+<script>
+  if (document.location.search.match(/type=embed/gi)) {
+    window.parent.postMessage("resize", "*");
+  }
+</script>
+</head>
+<body translate="no">
+<div class="container">
+<div class="row no-gutters">
+<div class="col-md-4 border-right">
+<div class="settings-tray">
+<img class="profile-image" src="https://clarity-enhanced.net/wp-content/themes/clarity-enhanced/assets/img/bootstrap-chat-app-assets/filip.jpg" alt="Profile img">
+<span class="settings-tray--right">
+<i class="material-icons">cached</i>
+<i class="material-icons">message</i>
+<i class="material-icons">menu</i>
+</span>
+</div>
+<div class="search-box">
+<div class="input-wrapper">
+<i class="material-icons">search</i>
+<input placeholder="Search here" type="text">
+</div>
+</div>
+<div class="friend-drawer friend-drawer--onhover">
+<img class="profile-image" src="https://clarity-enhanced.net/wp-content/themes/clarity-enhanced/assets/img/bootstrap-chat-app-assets/robocop.jpg" alt="">
+<div class="text">
+<h6>Robo Cop</h6>
+<p class="text-muted">Hey, you're arrested!</p>
+</div>
+<span class="time text-muted small">13:21</span>
+</div>
+<hr>
+<div class="friend-drawer friend-drawer--onhover">
+<img class="profile-image" src="https://clarity-enhanced.net/wp-content/themes/clarity-enhanced/assets/img/bootstrap-chat-app-assets/optimus-prime.jpeg" alt="">
+<div class="text">
+<h6>Optimus</h6>
+<p class="text-muted">Wanna grab a beer?</p>
+</div>
+<span class="time text-muted small">00:32</span>
+</div>
+<hr>
+<div class="friend-drawer friend-drawer--onhover ">
+<img class="profile-image" src="https://clarity-enhanced.net/wp-content/themes/clarity-enhanced/assets/img/bootstrap-chat-app-assets/real-terminator.png" alt="">
+<div class="text">
+<h6>Skynet</h6>
+<p class="text-muted">Seen that canned piece of s?</p>
+</div>
+<span class="time text-muted small">13:21</span>
+</div>
+<hr>
+<div class="friend-drawer friend-drawer--onhover">
+<img class="profile-image" src="https://clarity-enhanced.net/wp-content/themes/clarity-enhanced/assets/img/bootstrap-chat-app-assets/termy.jpg" alt="">
+<div class="text">
+<h6>Termy</h6>
+<p class="text-muted">Im studying spanish...</p>
+</div>
+<span class="time text-muted small">13:21</span>
+</div>
+<hr>
+<div class="friend-drawer friend-drawer--onhover">
+<img class="profile-image" src="https://clarity-enhanced.net/wp-content/themes/clarity-enhanced/assets/img/bootstrap-chat-app-assets/rick.jpg" alt="">
+<div class="text">
+<h6>Richard</h6>
+<p class="text-muted">I'm not sure...</p>
+</div>
+<span class="time text-muted small">13:21</span>
+</div>
+<hr>
+<div class="friend-drawer friend-drawer--onhover">
+<img class="profile-image" src="https://clarity-enhanced.net/wp-content/themes/clarity-enhanced/assets/img/bootstrap-chat-app-assets/rachel.jpeg" alt="">
+<div class="text">
+<h6>XXXXX</h6>
+<p class="text-muted">Hi, wanna see something?</p>
+</div>
+<span class="time text-muted small">13:21</span>
+</div>
+</div>
+<div class="col-md-8">
+<div class="settings-tray">
+<div class="friend-drawer no-gutters friend-drawer--grey">
+<img class="profile-image" src="https://clarity-enhanced.net/wp-content/themes/clarity-enhanced/assets/img/bootstrap-chat-app-assets/robocop.jpg" alt="">
+<div class="text">
+<h6>Robo Cop</h6>
+<p class="text-muted">Layin' down the law since like before Christ...</p>
+</div>
+<span class="settings-tray--right">
+<i class="material-icons">cached</i>
+<i class="material-icons">message</i>
+<i class="material-icons">menu</i>
+</span>
+</div>
+</div>
+<div class="chat-panel">
+<div class="row no-gutters">
+<div class="col-md-3">
+<div class="chat-bubble chat-bubble--left">
+Hello dude!
+</div>
+</div>
+</div>
+<div class="row no-gutters">
+<div class="col-md-3 offset-md-9">
+<div class="chat-bubble chat-bubble--right">
+Hello dude!
+</div>
+</div>
+</div>
+<div class="row no-gutters">
+<div class="col-md-3 offset-md-9">
+<div class="chat-bubble chat-bubble--right">
+Hello dude!
+</div>
+</div>
+</div>
+<div class="row no-gutters">
+<div class="col-md-3">
+<div class="chat-bubble chat-bubble--left">
+Hello dude!
+</div>
+</div>
+</div>
+<div class="row no-gutters">
+<div class="col-md-3">
+<div class="chat-bubble chat-bubble--left">
+Hello dude!
+</div>
+</div>
+</div>
+<div class="row no-gutters">
+<div class="col-md-3">
+<div class="chat-bubble chat-bubble--left">
+Hello dude!
+</div>
+</div>
+</div>
+<div class="row no-gutters">
+<div class="col-md-3 offset-md-9">
+<div class="chat-bubble chat-bubble--right">
+Hello dude!
+</div>
+</div>
+</div>
+<div class="row">
+<div class="col-12">
+<div class="chat-box-tray">
+<i class="material-icons">sentiment_very_satisfied</i>
+<input type="text" placeholder="Type your message here...">
+<i class="material-icons">mic</i>
+<i class="material-icons">send</i>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+<script src="https://static.codepen.io/assets/common/stopExecutionOnTimeout-157cd5b220a5c80d4ff8e0e70ac069bffd87a61252088146915e8726e5d9f147.js"></script>
+<script src='https://cdnjs.cloudflare.com/ajax/libs/jquery/3.4.1/jquery.min.js'></script>
+<script id="rendered-js">
+// Video tutorial/codealong here: https://youtu.be/fCpw5i_2IYU
+
+$('.friend-drawer--onhover').on('click', function () {
+
+  $('.chat-bubble').hide('slow').show('slow');
+
+});
+
+// Video tutorial/codealong here: https://youtu.be/fCpw5i_2IYU
+//# sourceURL=pen.js
+    </script>
+</body>
+</html>
