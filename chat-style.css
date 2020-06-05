@@ -273,10 +273,10 @@ body {
 }
 
 .chat-receiver {
-  margin-top :10px;
+  margin-top :1.5em;
   margin-left:25px;
   margin-right:70%;
-  margin-bottom:10px;
+  margin-bottom:0.5em;
     
   padding: 10px 14px;
   background: #ddd; 
@@ -309,7 +309,7 @@ body {
   margin-right: -20px;
 }
 .chat-receiver h1 {
-  margin-top:-2.2em;
+  margin-top:-2.1em;
   margin-left:-1em;
   color: black;
   font-size: 0.7em;
@@ -324,10 +324,10 @@ body {
 
 
 .chat-sender {
-  margin-top :15px;
+  margin-top :1.5em;
   margin-left:70%;
   margin-right:30px;
-  margin-bottom:5px;
+  margin-bottom:0.5em;
   padding: 10px 14px;
   background: #74b9ff; 
   color: #fff;
@@ -355,7 +355,7 @@ body {
 } 
 
 .chat-sender h1 {
-  margin-top:-2.2em;
+  margin-top:-2.1em;
   margin-left:-1em;
   color: black;
   font-size: 0.7em;
