@@ -348,32 +348,35 @@ socket.on('chat', function(data){
         console.log('focuse: ', focused);
 
         if(focused) {
-            sendDisplayNoti(data.From, data.MsgID);
-            imdnIDX = IMDN.get(data.MsgID);
-            callLog[imdnIDX].status = 2;
+            if(imdnIDX = IMDN.get(data.MsgID)) {
+                callLog[imdnIDX].status = 2;
+                sendDisplayNoti(data.From, data.MsgID);
+            }            
         } 
     }
     else if(data.EvtType == 'delivery') {
         console.log('delivery report was received: '+data.MsgID);        
 
         // change status from 'sent' to 'delivery'
-        imdnIDX = IMDN.get(data.MsgID);
-        console.log('imdn index: '+imdnIDX)
-        msglistparam[imdnIDX].textContent = '1';
+        if(imdnIDX = IMDN.get(data.MsgID)) {
+            console.log('imdn index: '+imdnIDX)
+            msglistparam[imdnIDX].textContent = '1';    
 
-        callLog = msgHistory.get(data.From);
-        callLog[imdnIDX].status = 1;
+            callLog = msgHistory.get(data.From);
+            callLog[imdnIDX].status = 1;
+        }
     }    
     else if(data.EvtType == 'display') {
         console.log('display report was received: '+data.MsgID);        
 
         // change status from 'sent' to 'delivery'
-        imdnIDX = IMDN.get(data.MsgID);
-        console.log('imdn index: '+imdnIDX);
-        msglistparam[imdnIDX].textContent = '\u00A0';
+        if(imdnIDX = IMDN.get(data.MsgID)) {
+            console.log('imdn index: '+imdnIDX);
+            msglistparam[imdnIDX].textContent = '\u00A0';
 
-        callLog = msgHistory.get(data.From);
-        callLog[imdnIDX].status = 2;     
+            callLog = msgHistory.get(data.From);
+            callLog[imdnIDX].status = 2;     
+        }
     } 
 });
 
@@ -491,7 +494,7 @@ function updateChatWindow(from) {
         else start = callLog.length - maxMsgItems;
 
         for(i=start;i<callLog.length;i++) {
-            var date = new Date(callLog[i].msg.Timestamp * 1000);
+            var date = new Date(callLog[i].msg.Timestamp * 1000);            
             var timestr = date.getHours() + ':' + date.getMinutes() + ':' + date.getSeconds();
 
             if(callLog[i].logType == 1) {
