@@ -1,18 +1,19 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <title>Bootstrap Example</title>
+  <title>Invitation</title>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.1/css/bootstrap.min.css">
   <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
   <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.1/js/bootstrap.min.js"></script>
+  <link rel="stylesheet", href="invite.css">
 </head>
 <body>
 
 <div class="container">
-  <h2>Filterable Table</h2>
-  <p>Type something in the input field to search the table for first names, last names or emails:</p>  
+  <h2>Addressbook</h2>
+  <p id="participants">Select participants in the list of Webchat subsriber:</p>  
   <input class="form-control" id="myInput" type="text" placeholder="Search..">
   <br>
   <table class="table table-bordered table-striped">
@@ -23,24 +24,23 @@
       </tr>
     </thead>
     <tbody id="myTable">
-      <tr>
-        <td>John</td>
-        <td>01027952195</td>
-      </tr>
-      <tr>
-        <td>Park</td>
-        <td>114</td>
-      </tr>
-      <tr>
-        <td>kyopark</td>
-        <td>025162232</td>
-      </tr>
+      <tr id="user0"></tr>
+      <tr id="user1"></tr>
+      <tr id="user2"></tr>
+      <tr id="user3"></tr>
+      <tr id="user4"></tr>
+      <tr id="user5"></tr>
+      <tr id="user6"></tr>
+      <tr id="user7"></tr>
+      <tr id="user8"></tr>
+      <tr id="user9"></tr>
     </tbody>
   </table>
   
-  <p>Note that we start the search in tbody, to prevent filtering the table headers.</p>
-</div>
+  <p>Note that the list is provided for development convenionce.</p>
 
+  <input class="btn" type="START" value="Submit" id="submit">
+</div>
 <script>
 $(document).ready(function(){
   $("#myInput").on("keyup", function() {
@@ -51,6 +51,6 @@ $(document).ready(function(){
   });
 });
 </script>
-
+<script src="address.js"></script>
 </body>
 </html>

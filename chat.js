@@ -31,8 +31,7 @@ HashMap.prototype = {
 };
 
 // Make connection
-//var socket = io.connect('http://localhost:4000');
-var socket = io.connect('http://10.253.69.155:4000');
+var socket = io.connect('http://localhost:4000');
 
 // Documents
 const title = document.querySelector('#title');
@@ -102,7 +101,7 @@ function assignNewCallLog(id) {
         index++;   
         
         from = id;
-        console.log('from: '+ from + ' index: '+idx.get(from) );
+        // console.log('from: '+ from + ' index: '+idx.get(from) );
 
         list[idx.get(from)].innerHTML = 
         `<div class="friend-drawer friend-drawer--onhover">
@@ -115,12 +114,17 @@ function assignNewCallLog(id) {
         </div>`;     
         
         var param = ['','',''];  // param[0] = name, parma[0] = text, param[1] = timestr
-        listparam[idx.get(from)] = param;
+        listparam[idx.get(from)] = param;        
         listparam[idx.get(from)][0] = document.getElementById(from+'_name');
         listparam[idx.get(from)][1] = document.getElementById(from+'_text');
         listparam[idx.get(from)][2] = document.getElementById(from+'_timestr');    
 
-        listparam[idx.get(from)][0].textContent = from;
+        if(from[0]=='g') {
+            listparam[idx.get(from)][0].textContent = participants.get(from);
+        }
+        else {
+            listparam[idx.get(from)][0].textContent = from;
+        }
         
         var m = new HashMap();
         m.put('abc',10);
@@ -171,12 +175,27 @@ function updateCalllog() {
 
             console.log('From: '+from+' Text: '+text+' Timestr: '+timestr);
 
-            listparam[idx.get(from)][0].textContent = from; 
+            if(from[0]=='g') {
+                console.log("groupchat: "+ from);
+                listparam[idx.get(from)][0].textContent = participants.get(from);
+            }
+            else {
+                listparam[idx.get(from)][0].textContent = from;
+            }
+
             listparam[idx.get(from)][1].textContent = text; 
             listparam[idx.get(from)][2].textContent = timestr; 
         } else {
             from = keys[i];
-            listparam[idx.get(from)][0].textContent = from; 
+
+            if(from[0]=='g') {
+                console.log("groupchat: "+ from);
+                listparam[idx.get(from)][0].textContent = participants.get(from);
+            }
+            else {
+                listparam[idx.get(from)][0].textContent = from;
+            }
+
             listparam[idx.get(from)][1].textContent = ''; 
             listparam[idx.get(from)][2].textContent = '';
         }
@@ -200,6 +219,63 @@ function setDest(id) {
     updateChatWindow(callee);
 }
 
+function StartNewChat(participantList) {
+    console.log('The earn participant list; '+participantList);
+
+    if(participantList.length==1) { // 1 to 1 chat
+        callee = participantList[0];
+    }
+    else if(participantList.length==2 && participantList[0]==uid) { // 1 to 1 chat
+        callee = participantList[1];
+    }
+    else if(participantList.length==2 && participantList[1]==uid) { // 1 to 1 chat
+        callee = participantList[0];
+    }
+    else { // groupchat
+        isInclude = false;
+        for(i=0;i<participantList.length;i++) {  // if the owner is not included in the participants list, add it
+            if(participantList[i] == uid) {
+                isInclude = true;
+                break;
+            }
+        }
+        if(isInclude == false) participants.push(uid);
+        
+        console.log('size: '+participantList.length);
+
+        grpID = 'group_'+uuidv4();
+        // console.log(grpID)
+
+        var date = new Date();
+        var timestamp = Math.floor(date.getTime()/1000);
+                
+        const groupmsg = {
+            EvtType: "create",
+            From: uid,
+            To: grpID,
+            Timestamp: timestamp,
+            Participants: participantList
+        };
+
+        const grpJSON = JSON.stringify(groupmsg);
+        
+        console.log('create groupchat: ' + participantList);
+        participants.put(grpID, participantList)
+        
+        socket.emit('group', grpJSON);  // creat groupchat
+
+        callee = grpID;
+    }
+
+    if(!msgHistory.get(callee)) {
+        assignNewCallLog(callee);
+    }
+    
+    setConveration(callee);
+    updateChatWindow(callee);
+}
+
+
 // Listeners
 message.addEventListener('keyup', function(e){
     if (e.keyCode == 13) {
@@ -219,10 +295,9 @@ refreshChatWindow.addEventListener('click', function(){
 
 attachFile.addEventListener('click', function(){
     var xmlHttp = new XMLHttpRequest();
-    xmlHttp.open( "GET", "http://localhost:8081/search/kyopark", false ); // false for synchronous request
+    xmlHttp.open( "GET", "http://localhost:8080/search/kyopark", false ); // false for synchronous request
     xmlHttp.send( null );
     console.log(xmlHttp.responseText);
-
 
     var input = $(document.createElement('input')); 
     input.attr("type", "file");
@@ -231,8 +306,8 @@ attachFile.addEventListener('click', function(){
 });
 
 newConversation.addEventListener('click', function(){
-    var popUrl = "invite.html";	
-	var popOption = "width=370, height=360, resizable=no, scrollbars=no, status=no;";    
+    var popUrl = "invite2.html";	
+	var popOption = "width=400, height=500, resizable=no, scrollbars=no, status=no;";    
         window.open(popUrl,"",popOption);
 });
 
@@ -248,6 +323,7 @@ function onSend(e) {
         const chatmsg = {
             EvtType: "message",
             From: uid,
+            Originated: '',
             To: callee,
             MsgID: uuidv4(),
             Timestamp: timestamp,
@@ -261,14 +337,22 @@ function onSend(e) {
         var date = new Date(timestamp * 1000);
         var timestr = date.getHours() + ':' + date.getMinutes() + ':' + date.getSeconds();
 
-        listparam[idx.get(callee)][0].textContent = callee; 
+        if(callee[0] == 'g') listparam[idx.get(callee)][0].textContent = participants.get(callee); 
+        else listparam[idx.get(callee)][0].textContent = callee; 
+
         listparam[idx.get(callee)][1].textContent = message.value; 
         listparam[idx.get(callee)][2].textContent = timestr; 
+
+        console.log('participant: '+ participants.get(callee));
+        var cnt;
+        if(callee[0] == 'g') cnt = participants.get(callee).length;
+        else cnt = 1;
 
         // save the sent message
         const log = {
             logType: 1,    // 1: sent, 0: receive
             status: 0,     // 0: sent, 1: delivery, 2: display
+            readCount: cnt,
             msg: chatmsg
         };
 
@@ -295,8 +379,14 @@ function uuidv4() {
 // receive the id of callee from "invite.html"
 function setConveration(id) {
     if(id != -1) {
-        calleeName.textContent = 'Name'+id;  // To-do: next time, it will be earn from the profile server
-        calleeId.textContent = id;
+        if(id[0] == 'g') {
+            calleeName.textContent = 'Groupchat'
+            calleeId.textContent = participants.get(id);
+        }
+        else {
+            calleeName.textContent = 'Name'+id;  // To-do: next time, it will be earn from the profile server
+            calleeId.textContent = id;
+        }
     }
 }
 
@@ -335,7 +425,9 @@ socket.on('chat', function(data){
         }
 
         // update the call log 
-        listparam[idx.get(data.From)][0].textContent = data.From; 
+        if(data.From[0]=='g') listparam[idx.get(data.From)][0].textContent = participants.get(data.From); 
+        else listparam[idx.get(data.From)][0].textContent = data.From; 
+
         listparam[idx.get(data.From)][1].textContent = data.Text; 
         listparam[idx.get(data.From)][2].textContent = timestr;
 
@@ -345,10 +437,11 @@ socket.on('chat', function(data){
         
         // send display report
         focused = document.hasFocus();
-        console.log('focuse: ', focused);
+        console.log('focus: ', focused);
 
         if(focused) {
-            if(imdnIDX = IMDN.get(data.MsgID)) {
+            imdnIDX = IMDN.get(data.MsgID)
+            if(imdnIDX) {
                 callLog[imdnIDX].status = 2;
                 sendDisplayNoti(data.From, data.MsgID);
             }            
@@ -359,23 +452,25 @@ socket.on('chat', function(data){
 
         // change status from 'sent' to 'delivery'
         if(imdnIDX = IMDN.get(data.MsgID)) {
-            console.log('imdn index: '+imdnIDX)
-            msglistparam[imdnIDX].textContent = '1';    
-
             callLog = msgHistory.get(data.From);
             callLog[imdnIDX].status = 1;
+
+        //    console.log('imdn index: '+imdnIDX+' readCount='+callLog[imdnIDX].readCount);
+            msglistparam[imdnIDX].textContent = callLog[imdnIDX].readCount;  
         }
     }    
     else if(data.EvtType == 'display') {
         console.log('display report was received: '+data.MsgID);        
 
         // change status from 'sent' to 'delivery'
-        if(imdnIDX = IMDN.get(data.MsgID)) {
-            console.log('imdn index: '+imdnIDX);
-            msglistparam[imdnIDX].textContent = '\u00A0';
-
+        if(imdnIDX = IMDN.get(data.MsgID)) {            
             callLog = msgHistory.get(data.From);
-            callLog[imdnIDX].status = 2;     
+            callLog[imdnIDX].status = 2;   
+        
+            if(callLog[imdnIDX].readCount>=1) callLog[imdnIDX].readCount--;
+            
+        //    console.log('imdn index: '+imdnIDX+' readCount='+callLog[imdnIDX].readCount);
+            msglistparam[imdnIDX].textContent = callLog[imdnIDX].readCount;
         }
     } 
 });
@@ -448,8 +543,8 @@ function sendDisplayNoti(sender, MsgID) {
     socket.emit('chat', displayJSON);   
 }
 
-function addSenderMessage(index,timestr,text,status) {
-    console.log("add sent message: "+text+' status='+status);
+function addSenderMessage(index,timestr,text,status,readCount) {
+    console.log("sent message: "+text+' status='+status + ' readcount=',readCount);
 
     msglist[index].innerHTML = 
         `<div class="chat-sender chat-sender--right"><h1>${timestr}</h1>${text}&nbsp;<h2 id="status${index}"></h2></div>`;   
@@ -457,14 +552,14 @@ function addSenderMessage(index,timestr,text,status) {
        
     msglistparam[index] = document.getElementById('status'+index);
     
-    if(status==0) 
-        msglistparam[index].textContent = '\u00A0'; 
-    else if(status==1)
-        msglistparam[index].textContent = '1'; 
-    else if(status==2)
-        msglistparam[index].textContent = '\u00A0'; 
+    if(status==0) {
+        msglistparam[index].textContent = '\u00A0';
+    } 
+    else if(status==1 || status==2) {
+        msglistparam[index].textContent = readCount; 
+    }
     
-    console.log(msglist[index].innerHTML);
+    // console.log(msglist[index].innerHTML);
 }
 
 function addReceiverMessage(index, sender,timestr, msg) {
@@ -499,22 +594,30 @@ function updateChatWindow(from) {
 
             if(callLog[i].logType == 1) {
                 console.log('Text: ',callLog[i].msg.Text)
-                addSenderMessage(i-start,timestr,callLog[i].msg.Text,callLog[i].status);
+                addSenderMessage(i-start,timestr,callLog[i].msg.Text,callLog[i].status,callLog[i].readCount);
 
                 IMDN.put(callLog[i].msg.MsgID, i-start);
             }
-            else 
-                addReceiverMessage(i-start,callLog[i].msg.From,timestr,callLog[i].msg.Text);  // To-Do: data.From -> Name       
+            else {
+                if(callLog[i].msg.Originated == "")
+                    addReceiverMessage(i-start,callLog[i].msg.From,timestr,callLog[i].msg.Text);  // To-Do: data.From -> Name       
+                else 
+                    addReceiverMessage(i-start,callLog[i].msg.Originated,timestr,callLog[i].msg.Text);  
+            }
         }
 
         chatPanel.scrollTop = chatPanel.scrollHeight;  // scroll needs to move bottom
     }
 }
 
+
+participants = new HashMap();
+
 // Listen for events 
-socket.on('participant', function(data){
-    title.textContent = 'Web Chat (' + data + ')';
-    console.log('update participants');
+socket.on('groupInfo', function(data){
+    console.log('groupID: '+data.To + 'participants info: '+data.Participants);
+
+    participants.put(data.To, data.Participants)
 });
 
 socket.on('typing', function(data){
