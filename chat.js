@@ -39,6 +39,7 @@ const sendBtn = document.querySelector('#sendBtn');
 const message = document.querySelector('#chatInput')
 const attachFile = document.querySelector('#attachFile');
 const newConversation = document.querySelector('#newConversation');  // To input callee number
+const newParticipant = document.querySelector('#refer');  // To input callee number
 
 const chatPanel = document.querySelector('#chatPanel');
 
@@ -120,7 +121,7 @@ function assignNewCallLog(id) {
         listparam[idx.get(from)][2] = document.getElementById(from+'_timestr');    
 
         if(from[0]=='g') {
-            listparam[idx.get(from)][0].textContent = participants.get(from);
+            listparam[idx.get(from)][0].textContent = getNameofGroup(from);
         }
         else {
             listparam[idx.get(from)][0].textContent = from;
@@ -143,8 +144,8 @@ function assignNewCallLog(id) {
                     for(i=callLog.length-1;i>=0;i--) {
                         if(callLog[i].logType==0) {  
                             if(callLog[i].status==1) { // If display notification needs to send
-                                console.log('send display notification: '+callLog[i].msg.MsgID);
-                                sendDisplayNoti(callLog[i].msg.From, callLog[i].msg.MsgID);
+                                // console.log('send display notification: '+callLog[i].msg.MsgID);
+                                sendDisplayNoti(callLog[i].msg.From, callLog[i].msg.Originated, callLog[i].msg.MsgID);
                                 callLog[i].status = 2;
                             }
                             else break;
@@ -177,7 +178,7 @@ function updateCalllog() {
 
             if(from[0]=='g') {
                 console.log("groupchat: "+ from);
-                listparam[idx.get(from)][0].textContent = participants.get(from);
+                listparam[idx.get(from)][0].textContent = getNameofGroup(from);
             }
             else {
                 listparam[idx.get(from)][0].textContent = from;
@@ -190,7 +191,7 @@ function updateCalllog() {
 
             if(from[0]=='g') {
                 console.log("groupchat: "+ from);
-                listparam[idx.get(from)][0].textContent = participants.get(from);
+                listparam[idx.get(from)][0].textContent = getNameofGroup(from);
             }
             else {
                 listparam[idx.get(from)][0].textContent = from;
@@ -232,14 +233,17 @@ function StartNewChat(participantList) {
         callee = participantList[0];
     }
     else { // groupchat
-        isInclude = false;
+        isIncluded = false
         for(i=0;i<participantList.length;i++) {  // if the owner is not included in the participants list, add it
             if(participantList[i] == uid) {
-                isInclude = true;
+                isIncluded = true;
                 break;
             }
         }
-        if(isInclude == false) participants.push(uid);
+        if(isIncluded == false) participantList.push(uid);
+
+        // To-Do
+        // If there is a duplicated groupchat which has the same participants, use the groupID
         
         console.log('size: '+participantList.length);
 
@@ -249,7 +253,7 @@ function StartNewChat(participantList) {
         var date = new Date();
         var timestamp = Math.floor(date.getTime()/1000);
                 
-        const groupmsg = {
+        const groupInfo = {
             EvtType: "create",
             From: uid,
             To: grpID,
@@ -257,7 +261,7 @@ function StartNewChat(participantList) {
             Participants: participantList
         };
 
-        const grpJSON = JSON.stringify(groupmsg);
+        const grpJSON = JSON.stringify(groupInfo);
         
         console.log('create groupchat: ' + participantList);
         participants.put(grpID, participantList)
@@ -275,6 +279,32 @@ function StartNewChat(participantList) {
     updateChatWindow(callee);
 }
 
+function getCurrentParticipants() {
+    var participantList = participants.get(callee);
+    console.log("current: "+participantList)
+
+    return participantList;
+}
+
+function addNewParticipant(addedparticipantList) {
+    console.log('The added participant list; '+addedparticipantList);
+    console.log('size: '+addedparticipantList.length);
+
+    console.log("callee: ", callee);
+ /*   for(i=0;i<addedparticipantList.length;i++) {
+        participants.put(callee, addedparticipantList[i]);
+    } */
+
+        // To-Do : add refer logic 
+    /*   socket.emit('group', grpJSON);  // creat groupchat
+        
+        if(!msgHistory.get(callee)) {
+            assignNewCallLog(callee);
+        }
+        
+        setConveration(callee);
+        updateChatWindow(callee); */
+}
 
 // Listeners
 message.addEventListener('keyup', function(e){
@@ -306,9 +336,21 @@ attachFile.addEventListener('click', function(){
 });
 
 newConversation.addEventListener('click', function(){
-    var popUrl = "invite2.html";	
+    var popUrl = "invite.html";	
 	var popOption = "width=400, height=500, resizable=no, scrollbars=no, status=no;";    
         window.open(popUrl,"",popOption);
+});
+
+newParticipant.addEventListener('click', function(){
+    console.log('callee: '+ callee);
+    if(callee==-1) {
+        alert("Make a chatroom first!")
+    }
+    else {
+        var popUrl = "invite_refer.html";	
+        var popOption = "width=400, height=500, resizable=no, scrollbars=no, status=no;";    
+            window.open(popUrl,"",popOption);
+    }
 });
 
 sendBtn.addEventListener('click', onSend);
@@ -337,15 +379,15 @@ function onSend(e) {
         var date = new Date(timestamp * 1000);
         var timestr = date.getHours() + ':' + date.getMinutes() + ':' + date.getSeconds();
 
-        if(callee[0] == 'g') listparam[idx.get(callee)][0].textContent = participants.get(callee); 
+        if(callee[0] == 'g') listparam[idx.get(callee)][0].textContent = getNameofGroup(callee); 
         else listparam[idx.get(callee)][0].textContent = callee; 
 
         listparam[idx.get(callee)][1].textContent = message.value; 
         listparam[idx.get(callee)][2].textContent = timestr; 
 
-        console.log('participant: '+ participants.get(callee));
+        // console.log('participant: '+ participants.get(callee));
         var cnt;
-        if(callee[0] == 'g') cnt = participants.get(callee).length;
+        if(callee[0] == 'g') cnt = participants.get(callee).length-1;
         else cnt = 1;
 
         // save the sent message
@@ -359,8 +401,8 @@ function onSend(e) {
         callLog = msgHistory.get(callee);
         callLog.push(log);
 
-        console.log('sent message: (from:' + log.msg.From + ' msg:' + log.msg.Text + ' timestamp:'+log.msg.Timestamp+')');
-
+        console.log('--> sent: '+log.msg.MsgID+' To:'+log.msg.To + ' ' + log.msg.Text);
+        
         updateChatWindow(callee);
 
         // send the message
@@ -381,7 +423,7 @@ function setConveration(id) {
     if(id != -1) {
         if(id[0] == 'g') {
             calleeName.textContent = 'Groupchat'
-            calleeId.textContent = participants.get(id);
+            calleeId.textContent = getNameofGroup(id); 
         }
         else {
             calleeName.textContent = 'Name'+id;  // To-do: next time, it will be earn from the profile server
@@ -390,13 +432,39 @@ function setConveration(id) {
     }
 }
 
+function getNameofGroup(id) {
+    var participantList=participants.get(id);
+//    console.log(participantList)
+    
+    var index=0;
+    var partipantStr='';
+    for(i=0;i<participantList.length;i++) {        
+        if(participantList[i] != uid) {
+            if(index==0) {
+                participantStr = participantList[i];
+                index++;
+            }
+            else {
+                participantStr += (', '+participantList[i]);
+                index++;
+            }
+        }
+    } 
+
+    var maxLength = 32;
+    console.log('length:'+participantStr.length +' new: ',participantStr.substring(0,maxLength));
+    if(participantStr.length>maxLength) return participantStr.substring(0,maxLength)+'...';
+    else return participantStr;
+}
+
 // Listen events to receive a message
 socket.on('chat', function(data){
     var date = new Date(data.Timestamp * 1000);
     var timestr = date.getHours() + ':' + date.getMinutes() + ':' + date.getSeconds();
 
     if(data.EvtType == 'message') {
-        console.log("received: " + data.Text);
+        console.log('--> received: '+data.MsgID+' (from:'+data.From +' '+data.Originated+ ' '+data.Text+')');
+
         // if the sender is not in call list, create a call log
         if(!msgHistory.get(data.From)) {
             assignNewCallLog(data.From);      
@@ -414,6 +482,7 @@ socket.on('chat', function(data){
         
         // show received message
         if(callee == -1) {
+
             callee = data.From;
 
             setConveration(callee);
@@ -425,13 +494,13 @@ socket.on('chat', function(data){
         }
 
         // update the call log 
-        if(data.From[0]=='g') listparam[idx.get(data.From)][0].textContent = participants.get(data.From); 
+        if(data.From[0]=='g') listparam[idx.get(data.From)][0].textContent = getNameofGroup(data.From); 
         else listparam[idx.get(data.From)][0].textContent = data.From; 
 
         listparam[idx.get(data.From)][1].textContent = data.Text; 
         listparam[idx.get(data.From)][2].textContent = timestr;
 
-        sendDeliveryNoti(data.From, data.MsgID);
+        sendDeliveryNoti(data.From, data.Originated, data.MsgID);
         log.status = 1;
         callLog[msgHistory.length-1] = log;
         
@@ -443,35 +512,40 @@ socket.on('chat', function(data){
             imdnIDX = IMDN.get(data.MsgID)
             if(imdnIDX) {
                 callLog[imdnIDX].status = 2;
-                sendDisplayNoti(data.From, data.MsgID);
+                sendDisplayNoti(data.From, data.Originated, data.MsgID);
             }            
         } 
     }
     else if(data.EvtType == 'delivery') {
         console.log('delivery report was received: '+data.MsgID);        
 
-        // change status from 'sent' to 'delivery'
-        if(imdnIDX = IMDN.get(data.MsgID)) {
-            callLog = msgHistory.get(data.From);
-            callLog[imdnIDX].status = 1;
+        imdnIDX = IMDN.get(data.MsgID)
+        console.log('imdn index: '+imdnIDX+' readCount='+callLog[imdnIDX].readCount);
 
-        //    console.log('imdn index: '+imdnIDX+' readCount='+callLog[imdnIDX].readCount);
-            msglistparam[imdnIDX].textContent = callLog[imdnIDX].readCount;  
+        // change status from 'sent' to 'delivery'
+        callLog = msgHistory.get(data.From);
+        if(callLog[imdnIDX].status == 0) {
+            callLog[imdnIDX].status = 1;
         }
+            
+        // console.log('imdn index: '+imdnIDX+' readCount='+callLog[imdnIDX].readCount);
+        msglistparam[imdnIDX].textContent = callLog[imdnIDX].readCount;  
     }    
     else if(data.EvtType == 'display') {
         console.log('display report was received: '+data.MsgID);        
 
         // change status from 'sent' to 'delivery'
-        if(imdnIDX = IMDN.get(data.MsgID)) {            
-            callLog = msgHistory.get(data.From);
-            callLog[imdnIDX].status = 2;   
+        imdnIDX = IMDN.get(data.MsgID)
+        callLog = msgHistory.get(data.From);
+        callLog[imdnIDX].status = 2;   
         
-            if(callLog[imdnIDX].readCount>=1) callLog[imdnIDX].readCount--;
+        if(callLog[imdnIDX].readCount>=1) callLog[imdnIDX].readCount--;
             
-        //    console.log('imdn index: '+imdnIDX+' readCount='+callLog[imdnIDX].readCount);
-            msglistparam[imdnIDX].textContent = callLog[imdnIDX].readCount;
-        }
+        console.log('imdn index: '+imdnIDX+' readCount='+callLog[imdnIDX].readCount);
+        if(callLog[imdnIDX].readCount==0) 
+            msglistparam[imdnIDX].textContent = '\u00A0'; 
+        else
+            msglistparam[imdnIDX].textContent = callLog[imdnIDX].readCount; 
     } 
 });
 
@@ -494,8 +568,7 @@ function updateCallLogToDisplayed() {
     for(i=callLog.length-1;i>=0;i--) {
         if(callLog[i].logType==0) {  
             if(callLog[i].status==1) { // If display notification needs to send
-                console.log('send display notification: '+callLog[i].msg.MsgID);
-                sendDisplayNoti(callLog[i].msg.From, callLog[i].msg.MsgID);
+                sendDisplayNoti(callLog[i].msg.From, callLog[i].msg.Originated, callLog[i].msg.MsgID);
                 callLog[i].status = 2;
             }
             else break;
@@ -503,9 +576,9 @@ function updateCallLogToDisplayed() {
     }
 }
 
-function sendDeliveryNoti(sender, MsgID) {
+function sendDeliveryNoti(To, Originated, MsgID) {
     // send delivery report
-    console.log('<-- delivery report: '+MsgID);
+    console.log('<-- delivery: '+MsgID);
 
     var date = new Date();
     var timestamp = Math.floor(date.getTime()/1000);
@@ -513,7 +586,8 @@ function sendDeliveryNoti(sender, MsgID) {
     const deliverymsg = {
         EvtType: "delivery",
         From: uid,
-        To: sender,
+        Originated: Originated,
+        To: To,
         MsgID: MsgID,
         Timestamp: timestamp,
     };
@@ -523,8 +597,8 @@ function sendDeliveryNoti(sender, MsgID) {
     socket.emit('chat', deliveryJSON);    
 }
 
-function sendDisplayNoti(sender, MsgID) {
-   console.log('<-- display report: '+MsgID);    
+function sendDisplayNoti(To, Originated, MsgID) {
+   console.log('<-- display: '+MsgID);    
 
     var date = new Date();
     var timestamp = Math.floor(date.getTime()/1000);
@@ -532,7 +606,8 @@ function sendDisplayNoti(sender, MsgID) {
     const displaymsg = {
         EvtType: "display",
         From: uid,
-        To: sender,
+        Originated: Originated,
+        To: To,
         MsgID: MsgID,
         Timestamp: timestamp,
     };
@@ -544,7 +619,7 @@ function sendDisplayNoti(sender, MsgID) {
 }
 
 function addSenderMessage(index,timestr,text,status,readCount) {
-    console.log("sent message: "+text+' status='+status + ' readcount=',readCount);
+    // console.log("sent message: "+text+' status='+status + ' readcount=',readCount);
 
     msglist[index].innerHTML = 
         `<div class="chat-sender chat-sender--right"><h1>${timestr}</h1>${text}&nbsp;<h2 id="status${index}"></h2></div>`;   
@@ -556,7 +631,10 @@ function addSenderMessage(index,timestr,text,status,readCount) {
         msglistparam[index].textContent = '\u00A0';
     } 
     else if(status==1 || status==2) {
-        msglistparam[index].textContent = readCount; 
+        if(readCount == 0)
+            msglistparam[index].textContent = '\u00A0'; 
+        else
+            msglistparam[index].textContent = readCount; 
     }
     
     // console.log(msglist[index].innerHTML);
@@ -593,13 +671,13 @@ function updateChatWindow(from) {
             var timestr = date.getHours() + ':' + date.getMinutes() + ':' + date.getSeconds();
 
             if(callLog[i].logType == 1) {
-                console.log('Text: ',callLog[i].msg.Text)
+                // console.log('Text: ',callLog[i].msg.Text)
                 addSenderMessage(i-start,timestr,callLog[i].msg.Text,callLog[i].status,callLog[i].readCount);
 
                 IMDN.put(callLog[i].msg.MsgID, i-start);
             }
             else {
-                if(callLog[i].msg.Originated == "")
+                if(callLog[i].msg.Originated == '')
                     addReceiverMessage(i-start,callLog[i].msg.From,timestr,callLog[i].msg.Text);  // To-Do: data.From -> Name       
                 else 
                     addReceiverMessage(i-start,callLog[i].msg.Originated,timestr,callLog[i].msg.Text);  
@@ -615,7 +693,7 @@ participants = new HashMap();
 
 // Listen for events 
 socket.on('groupInfo', function(data){
-    console.log('groupID: '+data.To + 'participants info: '+data.Participants);
+    console.log('groupID: '+data.To + ' participants info: '+data.Participants);
 
     participants.put(data.To, data.Participants)
 });

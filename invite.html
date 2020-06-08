@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <title>Invitation</title>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.1/css/bootstrap.min.css">
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+  <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.1/js/bootstrap.min.js"></script>
+  <link rel="stylesheet", href="invite.css">
+</head>
+<body>
+
+<div class="container">
+  <h2>Addressbook</h2>
+  <p id="participants">Select participants in the list of Webchat subsriber:</p>  
+  <input class="form-control" id="myInput" type="text" placeholder="Search..">
+  <br>
+  <table class="table table-bordered table-striped">
+    <thead>
+      <tr>
+        <th>Name</th>
+        <th>Phonenumber</th>
+      </tr>
+    </thead>
+    <tbody id="myTable">
+      <tr id="user0"></tr>
+      <tr id="user1"></tr>
+      <tr id="user2"></tr>
+      <tr id="user3"></tr>
+      <tr id="user4"></tr>
+      <tr id="user5"></tr>
+      <tr id="user6"></tr>
+      <tr id="user7"></tr>
+      <tr id="user8"></tr>
+      <tr id="user9"></tr>
+    </tbody>
+  </table>
+  
+  <p>Note that the list is provided for development convenionce.</p>
+
+  <input class="btn" type="START" value="Submit" id="submit">
+</div>
+<script>
+$(document).ready(function(){
+  $("#myInput").on("keyup", function() {
+    var value = $(this).val().toLowerCase();
+    $("#myTable tr").filter(function() {
+      $(this).toggle($(this).text().toLowerCase().indexOf(value) > -1)
+    });
+  });
+});
+</script>
+<script src="invite.js"></script>
+</body>
+</html>
