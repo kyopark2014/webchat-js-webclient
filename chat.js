@@ -279,6 +279,7 @@ function StartNewChat(participantList) {
     updateChatWindow(callee);
 }
 
+// getCurrentParticipants is to deliver the current participant list to "invite.js"
 function getCurrentParticipants() {
     var participantList = participants.get(callee);
     console.log("current: "+participantList)
@@ -286,24 +287,41 @@ function getCurrentParticipants() {
     return participantList;
 }
 
+// addNewParticipant is to refer for new participants
 function addNewParticipant(addedparticipantList) {
     console.log('The added participant list; '+addedparticipantList);
     console.log('size: '+addedparticipantList.length);
-
     console.log("callee: ", callee);
- /*   for(i=0;i<addedparticipantList.length;i++) {
-        participants.put(callee, addedparticipantList[i]);
-    } */
 
-        // To-Do : add refer logic 
-    /*   socket.emit('group', grpJSON);  // creat groupchat
+    var date = new Date();
+    var timestamp = Math.floor(date.getTime()/1000);
         
-        if(!msgHistory.get(callee)) {
-            assignNewCallLog(callee);
-        }
-        
-        setConveration(callee);
-        updateChatWindow(callee); */
+    const groupInfo = {
+        EvtType: "refer",
+        From: uid,
+        To: callee,
+        Timestamp: timestamp,
+        Participants: addedparticipantList
+    };
+
+    const grpJSON = JSON.stringify(groupInfo);
+    
+    console.log('add more participants: ' + addedparticipantList);
+
+    participantList = participants.get(callee);
+    for(i=0;i<addedparticipantList.length;i++) {
+        participantList.push(addedparticipantList[i]);
+    }
+    console.log('before '+participants.getAll());
+    participants.put(callee, participantList)
+    console.log('after '+participants.getAll());
+
+    socket.emit('group', grpJSON);  // refer 
+
+    // update callLog, Conversation, ChatWindow
+    updateCalllog();        
+    setConveration(callee);
+    updateChatWindow(callee);
 }
 
 // Listeners
