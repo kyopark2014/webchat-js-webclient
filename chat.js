@@ -40,6 +40,7 @@ const message = document.querySelector('#chatInput')
 const attachFile = document.querySelector('#attachFile');
 const newConversation = document.querySelector('#newConversation');  // To input callee number
 const newParticipant = document.querySelector('#refer');  // To input callee number
+const exitChatroom = document.querySelector('#depart');  // To input callee number
 
 const chatPanel = document.querySelector('#chatPanel');
 
@@ -121,7 +122,7 @@ function assignNewCallLog(id) {
         listparam[idx.get(from)][2] = document.getElementById(from+'_timestr');    
 
         if(from[0]=='g') {
-            listparam[idx.get(from)][0].textContent = getNameofGroup(from);
+            listparam[idx.get(from)][0].textContent = getNameofGroup(from, 32);
         }
         else {
             listparam[idx.get(from)][0].textContent = from;
@@ -174,11 +175,11 @@ function updateCalllog() {
             var date = new Date(callLog[callLog.length-1].msg.Timestamp * 1000);
             var timestr = date.getHours() + ':' + date.getMinutes() + ':' + date.getSeconds();
 
-            console.log('From: '+from+' Text: '+text+' Timestr: '+timestr);
+        //    console.log('From: '+from+' Text: '+text+' Timestr: '+timestr);
 
             if(from[0]=='g') {
                 console.log("groupchat: "+ from);
-                listparam[idx.get(from)][0].textContent = getNameofGroup(from);
+                listparam[idx.get(from)][0].textContent = getNameofGroup(from, 32);
             }
             else {
                 listparam[idx.get(from)][0].textContent = from;
@@ -191,7 +192,7 @@ function updateCalllog() {
 
             if(from[0]=='g') {
                 console.log("groupchat: "+ from);
-                listparam[idx.get(from)][0].textContent = getNameofGroup(from);
+                listparam[idx.get(from)][0].textContent = getNameofGroup(from, 32);
             }
             else {
                 listparam[idx.get(from)][0].textContent = from;
@@ -312,10 +313,8 @@ function addNewParticipant(addedparticipantList) {
     for(i=0;i<addedparticipantList.length;i++) {
         participantList.push(addedparticipantList[i]);
     }
-    console.log('before '+participants.getAll());
     participants.put(callee, participantList)
-    console.log('after '+participants.getAll());
-
+    
     socket.emit('group', grpJSON);  // refer 
 
     // update callLog, Conversation, ChatWindow
@@ -371,6 +370,52 @@ newParticipant.addEventListener('click', function(){
     }
 });
 
+exitChatroom.addEventListener('click', function(){
+    console.log('callee: '+ callee);
+    console.log('left!!');
+    if(callee[0]=='g') {
+     /*   var popUrl = "invite_refer.html";	
+        var popOption = "width=400, height=500, resizable=no, scrollbars=no, status=no;";    
+            window.open(popUrl,"",popOption); */
+
+        var r = window.confirm("You will be left this groupchat!");
+        if (r == true) {
+            var date = new Date();
+            var timestamp = Math.floor(date.getTime()/1000);
+                
+            const groupInfo = {
+                EvtType: 'depart',
+                From: uid,
+                To: callee,
+                Timestamp: timestamp,
+                Participants: ''
+            };
+
+            const grpJSON = JSON.stringify(groupInfo);
+            
+            console.log('depart : ' + callee);
+
+            participantList = participants.get(callee);
+            var newList = new Array();
+            for(i=0;i<participantList.length;i++) {
+                if(participantList[i])
+                    newList.push(participantList[i]);
+            }
+            participants.put(callee, newList);
+
+            console.log('newList: '+newList);
+
+            socket.emit('group', grpJSON);  // refer 
+
+            // update callLog, Conversation, ChatWindow
+            updateCalllog();        
+            setConveration(callee);
+            updateChatWindow(callee);
+        } 
+    }
+});
+
+
 sendBtn.addEventListener('click', onSend);
 
 function onSend(e) {
@@ -397,7 +442,7 @@ function onSend(e) {
         var date = new Date(timestamp * 1000);
         var timestr = date.getHours() + ':' + date.getMinutes() + ':' + date.getSeconds();
 
-        if(callee[0] == 'g') listparam[idx.get(callee)][0].textContent = getNameofGroup(callee); 
+        if(callee[0] == 'g') listparam[idx.get(callee)][0].textContent = getNameofGroup(callee, 32); 
         else listparam[idx.get(callee)][0].textContent = callee; 
 
         listparam[idx.get(callee)][1].textContent = message.value; 
@@ -441,7 +486,7 @@ function setConveration(id) {
     if(id != -1) {
         if(id[0] == 'g') {
             calleeName.textContent = 'Groupchat'
-            calleeId.textContent = getNameofGroup(id); 
+            calleeId.textContent = getNameofGroup(id, 55); 
         }
         else {
             calleeName.textContent = 'Name'+id;  // To-do: next time, it will be earn from the profile server
@@ -450,7 +495,7 @@ function setConveration(id) {
     }
 }
 
-function getNameofGroup(id) {
+function getNameofGroup(id, maxLength) {
     var participantList=participants.get(id);
 //    console.log(participantList)
     
@@ -469,8 +514,7 @@ function getNameofGroup(id) {
         }
     } 
 
-    var maxLength = 32;
-    console.log('length:'+participantStr.length +' new: ',participantStr.substring(0,maxLength));
+//    console.log('length:'+participantStr.length +' new: ',participantStr.substring(0,maxLength));
     if(participantStr.length>maxLength) return participantStr.substring(0,maxLength)+'...';
     else return participantStr;
 }
@@ -512,7 +556,7 @@ socket.on('chat', function(data){
         }
 
         // update the call log 
-        if(data.From[0]=='g') listparam[idx.get(data.From)][0].textContent = getNameofGroup(data.From); 
+        if(data.From[0]=='g') listparam[idx.get(data.From)][0].textContent = getNameofGroup(data.From, 32); 
         else listparam[idx.get(data.From)][0].textContent = data.From; 
 
         listparam[idx.get(data.From)][1].textContent = data.Text; 
@@ -565,6 +609,25 @@ socket.on('chat', function(data){
         else
             msglistparam[imdnIDX].textContent = callLog[imdnIDX].readCount; 
     } 
+    else {
+        console.log('received event: '+data.EvtType+' group:'+data.From+' ('+data.Originated+')');   
+
+        participantList = participants.get(callee);
+        newList = new Array();
+        for (i=0;i<participantList.length;i++) {
+            if(participantList[i] != data.Originated) {
+                newList.push(participantList[i]);
+            }
+        }
+
+        participants.put(callee, newList);
+
+        console.log("newList: "+newList);
+
+        updateCalllog();
+        setConveration(callee);
+        updateChatWindow(callee); 
+    }
 });
 
 (function() {
