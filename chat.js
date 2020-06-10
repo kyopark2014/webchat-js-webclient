@@ -66,8 +66,9 @@ var callee = -1;  // current conversation partner
 participants = new HashMap();
 
 // call log
+var maxIndex = 20;
 var list = [];  
-for (i=0;i<20;i++) {
+for (i=0;i<maxIndex;i++) {
     list.push(document.getElementById('callLog'+i));
 }
 var index = 0;    // # of call log lists
@@ -103,7 +104,15 @@ function assignNewCallLog(id) {
             msgHistory.put(id, new Array())
         
         idx.put(id, index);
-        index++;   
+        index++;    
+        if(index>=maxIndex) {
+            list = idx.getAll();
+
+            idx.clear();
+            for(i=0;i<maxIndex;i++) {
+                idx.put(list[index-maxIndex+i],i); // check this logic later
+            }
+        }
         
         from = id;
         // console.log('from: '+ from + ' index: '+idx.get(from) );
@@ -126,7 +135,7 @@ function assignNewCallLog(id) {
 
         if(from[0]=='g') {
             // console.log("From: ", from);
-            listparam[idx.get(from)][0].textContent = getNameofGroup(from, 32);
+            listparam[idx.get(from)][0].textContent = getNameofGroup(id, 32);
         }
         else {
             listparam[idx.get(from)][0].textContent = from;
@@ -435,11 +444,21 @@ function onSend(e) {
     if(message.value != '' && callee != -1) {
         var date = new Date();
         var timestamp = Math.floor(date.getTime()/1000);
+
+        var From, Originaterd;
+        if(callee[0] == 'g') {  // Group
+            From = callee;
+            Originaterd = uid;
+        }
+        else { // 1-to-1
+            From = uid;
+            Originaterd = '';
+        }
             
         const chatmsg = {
             EvtType: "message",
-            From: uid,
-            Originated: uid,
+            From: From,
+            Originated: Originaterd,
             To: callee,
             MsgID: uuidv4(),
             Timestamp: timestamp,
@@ -535,9 +554,9 @@ socket.on('chat', function(event){
     var date = new Date(event.Timestamp * 1000);
     var timestr = date.getHours() + ':' + date.getMinutes() + ':' + date.getSeconds();
 
-    if(event.EvtType == 'message') {
-        console.log('--> received: '+event.Body+' id:'+event.MsgID+' (from:'+event.From +' '+event.Originated+ ')');
+    console.log('--> received: ('+event.EvtType+') '+event.Body+' id:'+event.MsgID+' (from:'+event.From +' / '+event.Originated+ ')');
 
+    if(event.EvtType == 'message') {
         // if the sender is not in call list, create a call log
         if(!msgHistory.get(event.From)) {
             assignNewCallLog(event.From);      
@@ -736,7 +755,7 @@ function sendDisplayNoti(To, Originated, MsgID) {
     socket.emit('chat', displayJSON);   
 }
 
-function addSenderMessage(index,timestr,text,status,readCount) {
+function addSentMessage(index,timestr,text,status,readCount) {
     // console.log("sent message: "+text+' status='+status + ' readcount=',readCount);
 
     msglist[index].innerHTML = 
@@ -758,7 +777,7 @@ function addSenderMessage(index,timestr,text,status,readCount) {
     // console.log(msglist[index].innerHTML);
 }
 
-function addReceiverMessage(index, sender,timestr, msg) {
+function addReceivedMessage(index, sender, timestr, msg) {
 //    console.log("add received message: "+msg);
 
     msglist[index].innerHTML =  
@@ -788,17 +807,18 @@ function updateChatWindow(from) {
             var date = new Date(callLog[i].msg.Timestamp * 1000);            
             var timestr = date.getHours() + ':' + date.getMinutes() + ':' + date.getSeconds();
 
-            if(callLog[i].logType == 1) {
+            if(callLog[i].logType == 1) { // sender
                 // console.log('Text: ',callLog[i].msg.Body)
-                addSenderMessage(i-start,timestr,callLog[i].msg.Body,callLog[i].status,callLog[i].readCount);
+                addSentMessage(i-start,timestr,callLog[i].msg.Body,callLog[i].status,callLog[i].readCount);
 
                 IMDN.put(callLog[i].msg.MsgID, i-start);
             }
-            else {
-                if(callLog[i].msg.Originated == '')
-                    addReceiverMessage(i-start,callLog[i].msg.From,timestr,callLog[i].msg.Body);  // To-Do: event.From -> Name       
-                else 
-                    addReceiverMessage(i-start,callLog[i].msg.Originated,timestr,callLog[i].msg.Body);  
+            else {  // receiver
+                if(callLog[i].msg.From[0] == 'g')
+                    addReceivedMessage(i-start,callLog[i].msg.Originated,timestr,callLog[i].msg.Body);  
+                else
+                    addReceivedMessage(i-start,callLog[i].msg.From,timestr,callLog[i].msg.Body);  // To-Do: event.From -> Name        
+                    
             }
         }
 
