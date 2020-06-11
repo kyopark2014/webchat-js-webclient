@@ -676,21 +676,29 @@ socket.on('chat', function(event){
 
         else if(event.EvtType == 'join') {
             participantList = participants.get(event.From);
-            if(participantList != undefined) {
-                if(participants != undefined) {
-                    list = JSON.parse(event.Body);
+            var joinedList = ''; 
+            if(participantList != undefined && participants != undefined) {
+                list = JSON.parse(event.Body);
             
-                    for(i=0;i<list.length;i++) 
-                        participantList.push(list[i]);
-                    
-                    participants.put(event.From, participantList);       
+                for(i=0;i<list.length;i++) {
+                    participantList.push(list[i]);
+                
+                    if(i==0) joinedList = list[i];
+                    else joinedList += (' '+list[i]);
                 }
+
+                participants.put(event.From, participantList);       
             }
 
+            if(participantList.length==1)
+                msg = joinedList + ' has joined this chat';
+            else
+                msg = joinedList + ' have joined this chat';
+
             const log = {
-                logType: 2,    // 1: sent, 0: receive
-                status: 4,     // 0: sent, 1: delivery, 2: display
-                msg: event
+                logType: 2,    // 1: sent, 0: receive, 2: notify 
+                status: 4,     // 0: sent, 1: delivery, 2: display, 3: notify
+                msg: msg
             };
             callLog = msgHistory.get(event.From);
             callLog.push(log);
@@ -701,7 +709,7 @@ socket.on('chat', function(event){
         }
         else if(event.EvtType == 'depart') {
             participantList = participants.get(event.From);
-            if(participants != undefined) {
+            if(participantList != undefined && participants != undefined) {
                 newParticipantList = '';
                 for(i=0;i<event.Participants.length;i++) {
                     if(event.Participants[i]!=event.Originated) {
@@ -710,8 +718,17 @@ socket.on('chat', function(event){
                 }
                 participants.put(event.From, participantList);          
             }      
+
+            msg = event.Originated + ' have left this chat';
+            
+            const log = {
+                logType: 2,    // 1: sent, 0: receive, 2: notify 
+                status: 4,     // 0: sent, 1: delivery, 2: display, 3: notify
+                msg: msg
+            };
+            callLog = msgHistory.get(event.From);
+            callLog.push(log);
         }
-        updateCalllog();
         setConveration(event.From);
         updateCalllog();
     }
@@ -878,7 +895,7 @@ function updateChatWindow(from) {
                     
             }
             else if(callLog[i].logType == 2) {
-                addNotifyMessage("It is a notification message")
+                addNotifyMessage(callLog[i].msg);
             }
         }
 
