@@ -367,3 +367,7 @@ body {
   color: black;
   font-size: 0.7em;
 }
+
+.notification-text {
+  background-color: red;
+}
