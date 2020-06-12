@@ -268,11 +268,11 @@ function StartNewChat(participantList) {
         var timestamp = Math.floor(date.getTime()/1000);
                 
         const chatmsg = {
-            EvtType: "create",
-            From: uid,
+            EvtType: 'create',
+            From: grpID,
             Originated: uid,
             To: grpID,
-            MsgID: "",
+            MsgID: '',
             Timestamp: timestamp,
             Body: JSON.stringify(participantList)
         };
@@ -337,7 +337,7 @@ function addNewParticipant(addedparticipantList) {
         
     const chatmsg = {
         EvtType: "refer",
-        From: uid,
+        From: callee,
         Originated: uid,
         To: callee,
         MsgID: "",
@@ -401,7 +401,6 @@ newParticipant.addEventListener('click', function(){
 
 exitChatroom.addEventListener('click', function(){
     console.log('callee: '+ callee);
-    console.log('left!!');
     if(callee[0]=='g') {
      /*   var popUrl = "invite_refer.html";	
         var popOption = "width=400, height=500, resizable=no, scrollbars=no, status=no;";    
@@ -414,7 +413,7 @@ exitChatroom.addEventListener('click', function(){
                 
             const chatmsg = {
                 EvtType: "depart",
-                From: uid,
+                From: callee,
                 Originated: uid,
                 To: callee,
                 MsgID: '',
@@ -708,15 +707,15 @@ socket.on('chat', function(event){
             }
         }
         else if(event.EvtType == 'depart') {
-            participantList = participants.get(event.From);
+            participantList = participants.get(callee);
             if(participantList != undefined && participants != undefined) {
-                newParticipantList = '';
-                for(i=0;i<event.Participants.length;i++) {
-                    if(event.Participants[i]!=event.Originated) {
-                        newparticipantList.push(participantList[i]);
+                newParticipantList = new Array();
+                for(i=0;i<participantList.length;i++) {
+                    if(participantList[i]!=event.Originated) {
+                        newParticipantList.push(participantList[i]);
                     }
                 }
-                participants.put(event.From, participantList);          
+                participants.put(callee, newParticipantList);          
             }      
 
             msg = event.Originated + ' have left this chat';
@@ -726,10 +725,11 @@ socket.on('chat', function(event){
                 status: 4,     // 0: sent, 1: delivery, 2: display, 3: notify
                 msg: msg
             };
-            callLog = msgHistory.get(event.From);
+            callLog = msgHistory.get(callee);
             callLog.push(log);
         }
-        setConveration(event.From);
+        //updateChatWindow();
+        setConveration(callee);
         updateCalllog();
     }
 });
