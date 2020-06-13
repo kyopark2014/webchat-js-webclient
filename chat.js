@@ -582,7 +582,7 @@ socket.on('chat', function(event){
         }
 
         // console.log('group: ',event.From +' participants: ', participants.get(event.From));
-        if(participants.get(event.From)==undefined) {
+        if(participants.get(event.From)==undefined && event.From[0] == 'g') {
             console.log('No participant list, Rejoin is required')
             RejoinGroupchat(event);
         }
@@ -614,7 +614,11 @@ socket.on('chat', function(event){
         listparam[idx.get(event.From)][1].textContent = event.Body; 
         listparam[idx.get(event.From)][2].textContent = timestr;
 
-        sendDeliveryNoti(event.From, event.Originated, event.To, event.MsgID);
+        if(event.From[0] == 'g')
+            sendDeliveryNoti(event.From, event.Originated, event.To, event.MsgID);
+        else 
+            sendDeliveryNoti(event.To, "", event.From, event.MsgID);
+        
         log.status = 1;
         callLog[msgHistory.length-1] = log;
         
@@ -634,7 +638,7 @@ socket.on('chat', function(event){
         console.log('--> delivery: '+event.MsgID+' ('+event.From+')');        
 
         imdnIDX = IMDN.get(event.MsgID)
-        if(imdnIDX != undefined) {
+        if(imdnIDX != undefined && callLog[imdnIDX] != undefined) {
             console.log('imdn index: '+imdnIDX+' readCount='+callLog[imdnIDX].readCount);
 
             // change status from 'sent' to 'delivery'
@@ -651,9 +655,9 @@ socket.on('chat', function(event){
 
         // change status from 'sent' to 'delivery'
         imdnIDX = IMDN.get(event.MsgID)
-        // console.log('imdnIDX: ', imdnIDX);
+        console.log('imdnIDX: ', imdnIDX);
 
-        if(imdnIDX != undefined) {
+        if(imdnIDX != undefined && callLog[imdnIDX] != undefined) {
             callLog = msgHistory.get(event.From);
             callLog[imdnIDX].status = 2;   
             
