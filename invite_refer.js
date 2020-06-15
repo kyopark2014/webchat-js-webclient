@@ -34,15 +34,33 @@ var maxUsers = 10;
 
 members = new HashMap();
 
-members.put('01027952195','John');
-members.put('114','Park');
-members.put('025251123','Home');
-members.put('01090900001','H1');
-members.put('01090900002','H2');
-members.put('01090900003','H3');
-members.put('01090900004','H4');
-members.put('01090900005','H5');
+// current members
+memberSize = 0;
 
+function loadProfiles() {
+    console.log("Get all profiles");
+    var xmlHttp = new XMLHttpRequest();
+    xmlHttp.open( "GET", "http://localhost:4040/getall", false ); // false for synchronous request      
+    xmlHttp.send( null );
+    
+    const jsonObject = JSON.parse(xmlHttp.responseText)
+    console.log(jsonObject);
+    
+    members = new HashMap();
+    memberSize = jsonObject.length;
+    
+    for(i=0;i<jsonObject.length;i++) {
+        const profile = JSON.parse(jsonObject[i]);
+        console.log('uid: ' + profile.UID + ' name: '+profile.Name);
+    
+        members.put(profile.UID, profile.Name);
+    }
+
+    return members
+}
+
+// load profiles 
+members = loadProfiles();
 
 //addrTable.innerHTML = '';
 key = members.getKeys();
@@ -114,7 +132,7 @@ for(i=0;i<currentParticipantList.length;i++) {
 makeList();
 
 function makeList() {
-    for(i=0;i<5;i++) {       
+    for(i=0;i<memberSize;i++) {       
         if(current.get(key[i])==true) {
             userlist[i].innerHTML = 
            `<tr><td><b>${members.get(key[i])}</b></td><td><b>${key[i]}</b></td></tr>`    

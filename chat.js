@@ -58,6 +58,8 @@ if(uid != '')    {
 
     uid_str = document.getElementById('uid');
     uid_str.textContent = uid;
+
+    SetProfile(uid, uname);
 } 
 
 var callee = -1;  // current conversation partner
@@ -91,6 +93,9 @@ for (i=0;i<maxMsgItems;i++) {
         })
     })(i);
 }
+
+members = loadProfiles();
+memberSize = 0;
 
 // eventbase: To-Do: it will replated to indexed eventbase
 var msgHistory = new HashMap();
@@ -138,7 +143,7 @@ function assignNewCallLog(id) {
             listparam[idx.get(from)][0].textContent = getNameofGroup(id, 32);
         }
         else {
-            listparam[idx.get(from)][0].textContent = from;
+            listparam[idx.get(from)][0].textContent = members.get(from);
         }
         
         var m = new HashMap();
@@ -208,7 +213,7 @@ function updateCalllog() {
                 listparam[idx.get(from)][0].textContent = getNameofGroup(from, 32);
             }
             else {
-                listparam[idx.get(from)][0].textContent = from;
+                listparam[idx.get(from)][0].textContent = members.get[from];
             }
 
             listparam[idx.get(from)][1].textContent = ''; 
@@ -221,17 +226,60 @@ function updateCalllog() {
 setConveration(callee);
 updateChatWindow(callee);
 
-// earn the desternation number from "invite.html"
-function setDest(id) {
-    console.log('Destination: '+id);
-    callee = id;
-
-    if(!msgHistory.get(callee)) {
-        assignNewCallLog(callee);
+// load all profiles 
+function loadProfiles() {
+    console.log("Get all profiles");
+    var xmlHttp = new XMLHttpRequest();
+    xmlHttp.open( "GET", "http://localhost:4040/getall", false ); // false for synchronous request      
+    xmlHttp.send( null );
+    
+    const jsonObject = JSON.parse(xmlHttp.responseText)
+//    console.log(jsonObject);
+    
+    members = new HashMap();
+    memberSize = jsonObject.length;
+    
+    for(i=0;i<jsonObject.length;i++) {
+        const profile = JSON.parse(jsonObject[i]);
+//        console.log('uid: ' + profile.UID + ' name: '+profile.Name);
+    
+        members.put(profile.UID, profile.Name);
     }
 
-    setConveration(callee);
-    updateChatWindow(callee);
+    return members
+}
+
+// load a profile
+function loadProfile(id) {
+//    console.log('load profile: '+id);
+    var xmlHttp = new XMLHttpRequest();
+    xmlHttp.open( "GET", "http://localhost:4040/search/"+id, false ); // false for synchronous request      
+    xmlHttp.send( null );
+    
+    const profile = JSON.parse(xmlHttp.responseText);
+//    console.log('uid: ' + profile.UID + ' name: '+profile.Name);
+    
+    members.put(profile.UID, profile.Name);
+}
+
+// Save profile of owner
+function SetProfile(id, name) {
+    console.log(id, name);
+    var xmlHttp = new XMLHttpRequest();
+    xmlHttp.open( "POST", "http://localhost:4040/add", false ); // false for synchronous request      
+
+    const profile = {
+        UID: id,
+        Name: name
+    }
+    
+    const profileJSON = JSON.stringify(profile);
+    console.log(profileJSON);
+
+//    xmlHttp.send(null);
+    xmlHttp.send(profileJSON);
+    
+    console.log(xmlHttp.responseText);
 }
 
 function StartNewChat(participantList) {
@@ -370,11 +418,6 @@ refreshChatWindow.addEventListener('click', function(){
 });
 
 attachFile.addEventListener('click', function(){
-    var xmlHttp = new XMLHttpRequest();
-    xmlHttp.open( "GET", "http://localhost:8080/search/kyopark", false ); // false for synchronous request
-    xmlHttp.send( null );
-    console.log(xmlHttp.responseText);
-
     var input = $(document.createElement('input')); 
     input.attr("type", "file");
     input.trigger('click');
@@ -390,7 +433,9 @@ newConversation.addEventListener('click', function(){
 newParticipant.addEventListener('click', function(){
     console.log('callee: '+ callee);
     if(callee==-1) {
-        alert("Make a chatroom first!")
+        var popUrl = "invite.html";	
+        var popOption = "width=400, height=500, resizable=no, scrollbars=no, status=no;";    
+            window.open(popUrl,"",popOption);
     }
     else {
         var popUrl = "invite_refer.html";	
@@ -525,8 +570,11 @@ function uuidv4() {
 function setConveration(id) {
     if(id != -1) {
         if(id[0] == 'g') {
-            calleeName.textContent = 'Groupchat'
-            calleeId.textContent = getNameofGroup(id, 55); 
+            //calleeName.textContent = 'Groupchat'
+            //calleeId.textContent = getNameofGroup(id, 55); 
+
+            calleeName.textContent = getNameofGroup(id, 55); 
+            calleeId.textContent = getNumberofGroup(id, 55); 
         }
         else {
             calleeName.textContent = 'Name'+id;  // To-do: next time, it will be earn from the profile server
@@ -545,17 +593,46 @@ function getNameofGroup(id, maxLength) {
         for(i=0;i<participantList.length;i++) {        
             if(participantList[i] != uid) {
                 if(index==0) {
-                    participantStr = participantList[i];
+                    participantStr = members.get(participantList[i]);
                     index++;
                 }
                 else {
-                    participantStr += (', '+participantList[i]);
+                    participantStr += (', '+members.get(participantList[i]));
                     index++;
                 }
             }
         } 
 
-    //    console.log('length:'+participantStr.length +' new: ',participantStr.substring(0,maxLength));
+//        console.log('length:'+participantStr.length +' new: ',participantStr.substring(0,maxLength));
+        if(participantStr.length>maxLength) return participantStr.substring(0,maxLength)+'...';
+        else return participantStr;
+    }
+    else {
+        return '';
+    }
+}
+
+function getNumberofGroup(id, maxLength) {
+    var participantList=participants.get(id);
+    // console.log('id: '+id + ' list: ' +participantList)
+
+    if(participantList != undefined) {
+        var idx=0;
+        var participantStr='';
+        for(i=0;i<participantList.length;i++) {        
+            if(participantList[i] != uid) {
+                if(idx==0) {
+                    participantStr = participantList[i];
+                    idx++;
+                }
+                else {
+                    participantStr += (', '+participantList[i]);
+                    idx++;
+                }
+            }
+        } 
+
+//        console.log('length:'+participantStr.length +' new: ',participantStr.substring(0,maxLength));
         if(participantStr.length>maxLength) return participantStr.substring(0,maxLength)+'...';
         else return participantStr;
     }
@@ -675,6 +752,12 @@ socket.on('chat', function(event){
         //    console.log('NOTIFY from: '+event.From+' body: ', JSON.parse(event.Body))
             participants.put(event.From, JSON.parse(event.Body))
         //    console.log('After Notify, Participants: ',participants.get(event.From))
+        
+            // update profile
+            participantList = participants.get(event.From);
+            for(i=0;i<participantList.length;i++) {
+                loadProfile(participantList[i]) // update profile
+            }
         }
 
         else if(event.EvtType == 'join') {
@@ -685,9 +768,10 @@ socket.on('chat', function(event){
             
                 for(i=0;i<list.length;i++) {
                     participantList.push(list[i]);
+                    loadProfile(list[i]) // update profile
                 
-                    if(i==0) joinedList = list[i];
-                    else joinedList += (' '+list[i]);
+                    if(i==0) joinedList = members.get(list[i]);
+                    else joinedList += (' '+members.get(list[i]));
                 }
 
                 participants.put(event.From, participantList);       
@@ -722,7 +806,7 @@ socket.on('chat', function(event){
                 participants.put(callee, newParticipantList);          
             }      
 
-            msg = event.Originated + ' have left this chat';
+            msg = member.get(event.Originated) + ' have left this chat';
             
             const log = {
                 logType: 2,    // 1: sent, 0: receive, 2: notify 
@@ -857,10 +941,8 @@ function addReceivedMessage(index, sender, timestr, msg) {
 function addNotifyMessage(msg) {
     msglist[index].innerHTML =  
         `<div class="notification-text">${msg}</div>`;     
-    index++;
 }
     
-
 function updateChatWindow(from) {
     if(from != -1) {
         // clear chat window
@@ -893,9 +975,9 @@ function updateChatWindow(from) {
             }
             else if(callLog[i].logType == 0)  {  // receiver
                 if(callLog[i].msg.From[0] == 'g')
-                    addReceivedMessage(i-start,callLog[i].msg.Originated,timestr,callLog[i].msg.Body);  
+                    addReceivedMessage(i-start,members.get(callLog[i].msg.Originated),timestr,callLog[i].msg.Body);  
                 else
-                    addReceivedMessage(i-start,callLog[i].msg.From,timestr,callLog[i].msg.Body);  // To-Do: event.From -> Name        
+                    addReceivedMessage(i-start,members.get(callLog[i].msg.From),timestr,callLog[i].msg.Body);  // To-Do: event.From -> Name        
                     
             }
             else if(callLog[i].logType == 2) {

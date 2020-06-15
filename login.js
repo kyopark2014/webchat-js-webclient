@@ -35,8 +35,8 @@ function onSubmit(e) {
         localStorage.setItem('name',nameInput.value);
         localStorage.setItem('phonenumber',phonenumberInput.value);
 
-    //    window.opener.setName(nameInput.value);
-
+        console.log('Save Profile> id: ',phonenumberInput.value + ' name:', nameInput.value)    
+        
         window.location.href = "chat.html";
     }
 }
