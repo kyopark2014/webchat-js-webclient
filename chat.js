@@ -1,37 +1,7 @@
-HashMap = function() {
-    this.map = new Array();
-};
-
-HashMap.prototype = {
-    put: function(key, value) {
-        this.map[key] = value;
-    },
-    get: function(key) {
-        return this.map[key];
-    },
-    getAll: function() {
-        return this.map;
-    },
-    clear: function() {
-        return this.map;
-    },
-    isEmpty: function() {
-        return (this.map.size()==0);
-    },
-    remove: function(key) {
-        delete this.map[key];
-    },
-    getKeys: function() {
-        var keys = new Array();
-        for(i in this.map) {
-            keys.push(i);
-        }
-        return keys;
-    }
-};
+var host = '10.253.69.155';
 
 // Make connection
-var socket = io.connect('http://localhost:4000');
+var socket = io.connect('http://'+host+':4000');
 
 // Documents
 const title = document.querySelector('#title');
@@ -63,6 +33,38 @@ if(uid != '')    {
 } 
 
 var callee = -1;  // current conversation partner
+
+HashMap = function() {
+    this.map = new Array();
+};
+
+HashMap.prototype = {
+    put: function(key, value) {
+        this.map[key] = value;
+    },
+    get: function(key) {
+        return this.map[key];
+    },
+    getAll: function() {
+        return this.map;
+    },
+    clear: function() {
+        return this.map;
+    },
+    isEmpty: function() {
+        return (this.map.size()==0);
+    },
+    remove: function(key) {
+        delete this.map[key];
+    },
+    getKeys: function() {
+        var keys = new Array();
+        for(i in this.map) {
+            keys.push(i);
+        }
+        return keys;
+    }
+};
 
 // group info - participants
 participants = new HashMap();
@@ -139,18 +141,13 @@ function assignNewCallLog(id) {
         listparam[idx.get(from)][2] = document.getElementById(from+'_timestr');    
 
         if(from[0]=='g') {
-            // console.log("From: ", from);
             listparam[idx.get(from)][0].textContent = getNameofGroup(id, 32);
         }
         else {
             listparam[idx.get(from)][0].textContent = members.get(from);
         }
         
-        var m = new HashMap();
-        m.put('abc',10);
-
         callLog = msgHistory.get(callee);
-
         // add listener        
         (function(index, name) {
             list[index].addEventListener("click", function() {
@@ -164,7 +161,7 @@ function assignNewCallLog(id) {
                         if(callLog[i].logType==0) {  
                             if(callLog[i].status==1) { // If display notification needs to send
                                 // console.log('send display notification: '+callLog[i].msg.MsgID);
-                                sendDisplayNoti(callLog[i].msg.From, callLog[i].msg.Originated, callLog[i].msg.To, callLog[i].msg.MsgID);
+                                sendDisplayNoti(callLog[i].msg);
                                 callLog[i].status = 2;
                             }
                             else break;
@@ -230,7 +227,7 @@ updateChatWindow(callee);
 function loadProfiles() {
     console.log("Get all profiles");
     var xmlHttp = new XMLHttpRequest();
-    xmlHttp.open( "GET", "http://localhost:4040/getall", false ); // false for synchronous request      
+    xmlHttp.open( 'GET', 'http://'+host+':4040/getall', false ); // false for synchronous request      
     xmlHttp.send( null );
     
     const jsonObject = JSON.parse(xmlHttp.responseText)
@@ -253,7 +250,7 @@ function loadProfiles() {
 function loadProfile(id) {
 //    console.log('load profile: '+id);
     var xmlHttp = new XMLHttpRequest();
-    xmlHttp.open( "GET", "http://localhost:4040/search/"+id, false ); // false for synchronous request      
+    xmlHttp.open( 'GET', 'http://'+host+':4040/search/'+id, false ); // false for synchronous request      
     xmlHttp.send( null );
     
     const profile = JSON.parse(xmlHttp.responseText);
@@ -266,7 +263,7 @@ function loadProfile(id) {
 function SetProfile(id, name) {
     console.log(id, name);
     var xmlHttp = new XMLHttpRequest();
-    xmlHttp.open( "POST", "http://localhost:4040/add", false ); // false for synchronous request      
+    xmlHttp.open( 'POST', 'http://'+host+':4040/add', false ); // false for synchronous request      
 
     const profile = {
         UID: id,
@@ -577,7 +574,7 @@ function setConveration(id) {
             calleeId.textContent = getNumberofGroup(id, 55); 
         }
         else {
-            calleeName.textContent = 'Name'+id;  // To-do: next time, it will be earn from the profile server
+            calleeName.textContent = members.get(id);  // To-do: next time, it will be earn from the profile server
             calleeId.textContent = id;
         }
     }
@@ -692,9 +689,9 @@ socket.on('chat', function(event){
         listparam[idx.get(event.From)][2].textContent = timestr;
 
         if(event.From[0] == 'g')
-            sendDeliveryNoti(event.From, event.Originated, event.To, event.MsgID);
+            sendDeliveryNoti(event);
         else 
-            sendDeliveryNoti(event.To, "", event.From, event.MsgID);
+            sendDeliveryNoti(event);
         
         log.status = 1;
         callLog[msgHistory.length-1] = log;
@@ -707,7 +704,7 @@ socket.on('chat', function(event){
             imdnIDX = IMDN.get(event.MsgID)
             if(imdnIDX) {
                 callLog[imdnIDX].status = 2;
-                sendDisplayNoti(event.From, event.Originated, event.To, event.MsgID);
+                sendDisplayNoti(event);
             }            
         } 
     }
@@ -736,6 +733,7 @@ socket.on('chat', function(event){
 
         if(imdnIDX != undefined && callLog[imdnIDX] != undefined) {
             callLog = msgHistory.get(event.From);
+            // console.log('calllog[imdnIDX]'+callLog[imdnIDX])
             callLog[imdnIDX].status = 2;   
             
             if(callLog[imdnIDX].readCount>=1) callLog[imdnIDX].readCount--;
@@ -749,7 +747,7 @@ socket.on('chat', function(event){
     } 
     else {  // for group info
         if(event.EvtType == 'notify') {
-        //    console.log('NOTIFY from: '+event.From+' body: ', JSON.parse(event.Body))
+            console.log('--> NOTIFY from: '+event.From+' body: ', JSON.parse(event.Body))
             participants.put(event.From, JSON.parse(event.Body))
         //    console.log('After Notify, Participants: ',participants.get(event.From))
         
@@ -758,6 +756,31 @@ socket.on('chat', function(event){
             for(i=0;i<participantList.length;i++) {
                 loadProfile(participantList[i]) // update profile
             }
+        }
+        else if(event.EvtType == 'restart') {
+            console.log('RESTART from: '+event.From);
+            
+            // update profile
+            participantList = participants.get(event.From);
+
+            var date = new Date();
+            var timestamp = Math.floor(date.getTime()/1000);
+                        
+            const chatmsg = {
+                EvtType: "rejoin",
+                From: event.From,
+                Originated: uid,
+                To: event.From,
+                MsgID: "",
+                Timestamp: timestamp,
+                Body: JSON.stringify(participantList)
+            };
+
+            const msgJSON = JSON.stringify(chatmsg);
+                
+            console.log('<-- rejoin groupchat: ' + event.From + ' participants: '+participantList);
+                
+            socket.emit('chat', msgJSON);  // creat groupchat            
         }
 
         else if(event.EvtType == 'join') {
@@ -841,7 +864,7 @@ function updateCallLogToDisplayed() {
     for(i=callLog.length-1;i>=0;i--) {
         if(callLog[i].logType==0) {  
             if(callLog[i].status==1) { // If display notification needs to send
-                sendDisplayNoti(callLog[i].msg.From, callLog[i].msg.Originated, callLog[i].msg.To, callLog[i].msg.MsgID);
+                sendDisplayNoti(callLog[i].msg);
                 callLog[i].status = 2;
             }
             else break;
@@ -849,19 +872,21 @@ function updateCallLogToDisplayed() {
     }
 }
 
-function sendDeliveryNoti(From, Originated, To, MsgID) {
+function sendDeliveryNoti(event) {
     // send delivery report
-    console.log('<-- delivery: '+MsgID);
+    console.log('<-- delivery: '+event.MsgID);
 
     var date = new Date();
     var timestamp = Math.floor(date.getTime()/1000);
 
-    if(To[0] == 'g') {  // group
-        To = Originated;
+    if(event.To[0] == 'g') {  // group
+        From = event.From;
+        To = event.Originated;
         Originated = uid;
     }
     else {  // 1-to-1
-        To = From;
+        From = uid;
+        To = event.From;
         Originated = '';
     }
     
@@ -870,7 +895,7 @@ function sendDeliveryNoti(From, Originated, To, MsgID) {
         From: From,
         Originated: Originated,
         To: To,
-        MsgID: MsgID,
+        MsgID: event.MsgID,
         Timestamp: timestamp,
     };
     
@@ -879,18 +904,20 @@ function sendDeliveryNoti(From, Originated, To, MsgID) {
     socket.emit('chat', deliveryJSON);    
 }
 
-function sendDisplayNoti(From, Originated, To, MsgID) {
-   console.log('<-- display: '+MsgID);    
+function sendDisplayNoti(event) {
+    console.log('<-- display: '+event.MsgID);    
 
     var date = new Date();
     var timestamp = Math.floor(date.getTime()/1000);
 
-    if(To[0] == 'g') {  // group
-        To = Originated;
+    if(event.To[0] == 'g') {  // group
+        From = event.From;
+        To = event.Originated;
         Originated = uid;
     }
     else {  // 1-to-1
-        To = From;
+        From = uid;
+        To = event.From;
         Originated = '';
     }
             
@@ -899,7 +926,7 @@ function sendDisplayNoti(From, Originated, To, MsgID) {
         From: From,
         Originated: Originated,
         To: To,
-        MsgID: MsgID,
+        MsgID: event.MsgID,
         Timestamp: timestamp,
     };
             

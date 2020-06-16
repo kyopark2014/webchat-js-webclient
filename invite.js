@@ -38,7 +38,7 @@ memberSize = 0;
 function loadProfiles() {
     console.log("Get all profiles");
     var xmlHttp = new XMLHttpRequest();
-    xmlHttp.open( "GET", "http://localhost:4040/getall", false ); // false for synchronous request      
+    xmlHttp.open( "GET", "http://10.253.69.155:4040/getall", false ); // false for synchronous request      
     xmlHttp.send( null );
     
     const jsonObject = JSON.parse(xmlHttp.responseText)
