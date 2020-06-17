@@ -82,7 +82,7 @@ var idx = new HashMap();   // hashmap for index
 // initiate all elements of message log
 var msglist = [];
 var msglistparam = [];
-var maxMsgItems = 10;
+var maxMsgItems = 50;
 IMDN = new HashMap();
 
 for (i=0;i<maxMsgItems;i++) {
@@ -758,7 +758,7 @@ socket.on('chat', function(event){
             }
         }
         else if(event.EvtType == 'restart') {
-            console.log('RESTART from: '+event.From);
+            console.log('RESTART for: '+event.From);
             
             // update profile
             participantList = participants.get(event.From);
