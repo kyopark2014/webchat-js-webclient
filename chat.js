@@ -1,4 +1,4 @@
-var host = '10.253.69.155';
+var host = 'localhost';
 
 // Make connection
 var socket = io.connect('http://'+host+':4000');
@@ -829,7 +829,7 @@ socket.on('chat', function(event){
                 participants.put(callee, newParticipantList);          
             }      
 
-            msg = member.get(event.Originated) + ' have left this chat';
+            msg = members.get(event.Originated) + ' have left this chat';
             
             const log = {
                 logType: 2,    // 1: sent, 0: receive, 2: notify 
