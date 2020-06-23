@@ -25,19 +25,33 @@ function onSubmit(e) {
     console.log(nameInput.value);
     console.log(phonenumberInput.value);
 
-    if(nameInput.value == '' || phonenumberInput.value == '') {
-        msg.classList.add('error');
-        msg.innerHTML = 'Please enter fields'
+    isValid = true;
+    var number = '';
+    number = phonenumberInput.value;
+    for(i=0; i<number.length; i++) {
+        console.log(number[i]);
+        if(number[i] <'0' || number[i] > '9') {
+            alert("Phone number should be numbers");
+            isValid = false;
+            break;
+        }
+    }
 
-        setTimeout(()=> msg.remove(), 3000);
-    } else {
-        // update name and email
-        localStorage.setItem('name',nameInput.value);
-        localStorage.setItem('phonenumber',phonenumberInput.value);
+    if(isValid) {
+        if(nameInput.value == '' || phonenumberInput.value == '') {
+            msg.classList.add('error');
+            msg.innerHTML = 'Please enter fields'
 
-        console.log('Save Profile> id: ',phonenumberInput.value + ' name:', nameInput.value)    
-        
-        window.location.href = "chat.html";
+            setTimeout(()=> msg.remove(), 3000);
+        } else {
+            // update name and email
+            localStorage.setItem('name',nameInput.value);
+            localStorage.setItem('phonenumber',phonenumberInput.value);
+
+            console.log('Save Profile> id: ',phonenumberInput.value + ' name:', nameInput.value)    
+
+            window.location.href = "chat.html";
+        }
     }
 }
 
