@@ -77,13 +77,19 @@ for (i=0;i<maxListItems;i++) {
 }
 var index = 0;    // # of call log lists
 var listparam = []; // the params of list
-listIDX = new HashMap();   // hashmap for index
+var listIDX = new HashMap();   // hashmap for index
 
 // message log list
 var msglist = [];
 var msglistparam = [];
 var maxMsgItems = 50;
 var msgIDX = new HashMap();
+
+// eventbase: To-Do: it will replated to indexed eventbase
+var msgHistory = new HashMap();
+
+// closed group list
+var closedGroup = new HashMap();
 
 for (i=0;i<maxMsgItems;i++) {
     msglist.push(document.getElementById('msgLog'+i));
@@ -104,9 +110,6 @@ for (i=0;i<maxMsgItems;i++) {
 
 members = loadProfiles();
 memberSize = 0;
-
-// eventbase: To-Do: it will replated to indexed eventbase
-var msgHistory = new HashMap();
 
 assignNewCallLog(callee);  // make a call log for callee
 
@@ -164,7 +167,7 @@ function assignNewCallLog(id) {
 
                     callLog = msgHistory.get(callee);                   
                     for(i=callLog.length-1;i>=0;i--) {
-                        if(callLog[i].logType==0) {  
+                        if(callLog[i].logType==0) {  // receive
                             if(callLog[i].status==1) { // If display notification needs to send
                                 // console.log('send display notification: '+callLog[i].msg.MsgID);
                                 sendDisplayNoti(callLog[i].msg);
@@ -173,7 +176,15 @@ function assignNewCallLog(id) {
                             else break;
                         }
                     }
-                    setConveration(name);
+
+                    if(closedGroup.get(callee) == 1) {
+                        console.log(callee+' was closed previously');
+                        setConveration(name);
+                    } 
+                    else {
+                        setConveration(name);
+                    }
+
                     updateChatWindow(name); 
                 } 
             })
@@ -183,24 +194,31 @@ function assignNewCallLog(id) {
 
 function updateCalllog() {
     keys = msgHistory.getKeys();
-//    console.log('key length: '+keys.length);
+    console.log('key length: '+keys.length);
 
     for(i=0;i<keys.length;i++) {
-//        console.log('key: '+keys[i]);
+        console.log('key: '+keys[i]);
 
         var callLog = msgHistory.get(keys[i]);
         from = keys[i];
         
         if(callLog.length>0) {
-            var text = callLog[callLog.length-1].msg.Body;
-            var date = new Date(callLog[callLog.length-1].msg.Timestamp * 1000);
-            var timestr = date.getHours() + ':' + date.getMinutes() + ':' + date.getSeconds();
+            if(callLog.logType == 0 || callLog.logType == 1) {  // send, receive
+                var text = callLog[callLog.length-1].msg.Body;
+                var date = new Date(callLog[callLog.length-1].msg.Timestamp * 1000);
+                var timestr = date.getHours() + ':' + date.getMinutes() + ':' + date.getSeconds();
+            }
+            else { // notify
+                var text = callLog[callLog.length-1].msg;
+                var timestr = '';
+            }
 
-        //    console.log('From: '+from+' Text: '+text+' Timestr: '+timestr);
+            console.log('From: '+from+' Text: '+text+' Timestr: '+timestr);
 
             if(from[0]=='g') {
 //                console.log("groupchat: "+ from);
-                listparam[listIDX.get(from)][0].textContent = getNameofGroup(from, 32);
+                if (closedGroup.get(from) == 1) listparam[listIDX.get(from)][0].textContent = 'Closed Group';
+                else listparam[listIDX.get(from)][0].textContent = getNameofGroup(from, 32);
             }
             else {
                 listparam[listIDX.get(from)][0].textContent = from;
@@ -421,10 +439,12 @@ refreshChatWindow.addEventListener('click', function(){
 });
 
 attachFile.addEventListener('click', function(){
-    var input = $(document.createElement('input')); 
-    input.attr("type", "file");
-    input.trigger('click');
-    return false;
+    if(callee != -1 && closedGroup.get(callee) != 1) {
+        var input = $(document.createElement('input')); 
+        input.attr("type", "file");
+        input.trigger('click');
+        return false;
+    }
 });
 
 newConversation.addEventListener('click', function(){
@@ -435,25 +455,23 @@ newConversation.addEventListener('click', function(){
 
 newParticipant.addEventListener('click', function(){
     console.log('callee: '+ callee);
-    if(callee==-1) {
-        var popUrl = "invite.html";	
-        var popOption = "width=400, height=500, resizable=no, scrollbars=no, status=no;";    
-            window.open(popUrl,"",popOption);
-    }
-    else {
-        var popUrl = "invite_refer.html";	
-        var popOption = "width=400, height=500, resizable=no, scrollbars=no, status=no;";    
-            window.open(popUrl,"",popOption);
+    if(closedGroup.get(callee)!=1) {
+        if(callee==-1) {
+            var popUrl = "invite.html";	
+            var popOption = "width=400, height=500, resizable=no, scrollbars=no, status=no;";    
+                window.open(popUrl,"",popOption);
+        }
+        else {
+            var popUrl = "invite_refer.html";	
+            var popOption = "width=400, height=500, resizable=no, scrollbars=no, status=no;";    
+                window.open(popUrl,"",popOption);
+        }
     }
 });
 
 exitChatroom.addEventListener('click', function(){
     console.log('callee: '+ callee);
-    if(callee[0]=='g') {
-     /*   var popUrl = "invite_refer.html";	
-        var popOption = "width=400, height=500, resizable=no, scrollbars=no, status=no;";    
-            window.open(popUrl,"",popOption); */
-
+    if(callee[0]=='g' && closedGroup.get(callee) != 1) {
         var r = window.confirm("You will be left this groupchat!");
         if (r == true) {
             var date = new Date();
@@ -483,7 +501,9 @@ exitChatroom.addEventListener('click', function(){
 
             console.log('newList: '+newList);
 
-            socket.emit('chat', msgJSON);  // refer 
+            socket.emit('chat', msgJSON);  // depart
+
+            closedGroup.put(callee, 1);  // put callee into closed group list
 
             // update callLog, Conversation, ChatWindow
             updateCalllog();        
@@ -499,7 +519,7 @@ sendBtn.addEventListener('click', onSend);
 function onSend(e) {
     e.preventDefault();
 
-    if(message.value != '' && callee != -1) {
+    if(message.value != '' && callee != -1 && closedGroup.get(callee)!=1) {
         var date = new Date();
         var timestamp = Math.floor(date.getTime()/1000);
 
@@ -543,7 +563,7 @@ function onSend(e) {
 
         // save the sent message
         const log = {
-            logType: 1,    // 1: sent, 0: receive
+            logType: 1,    // 0: receive, 1: sent, 2: notify 
             status: 0,     // 0: sent, 1: delivery, 2: display
             readCount: cnt,
             msg: chatmsg
@@ -575,17 +595,20 @@ function uuidv4() {
 function setConveration(id) {
     if(id != -1) {
         if(id[0] == 'g') {
-            //calleeName.textContent = 'Groupchat'
-            //calleeId.textContent = getNameofGroup(id, 55); 
-
-            calleeName.textContent = getNameofGroup(id, 55); 
-            calleeId.textContent = getNumberofGroup(id, 55); 
+            if(closedGroup.get(id) == 1) {  // closed
+                calleeName.textContent = 'Closed Group'; 
+                calleeId.textContent = getNumberofGroup(id, 55); 
+            }
+            else {
+                calleeName.textContent = getNameofGroup(id, 55); 
+                calleeId.textContent = getNumberofGroup(id, 55); 
+            }
         }
         else {
             calleeName.textContent = members.get(id);  // To-do: next time, it will be earn from the profile server
             calleeId.textContent = id;
         }
-    }
+    } 
 }
 
 function getNameofGroup(id, maxLength) {
@@ -656,6 +679,14 @@ socket.on('chat', function(event){
     if(event.EvtType == 'message') {
         console.log('--> '+event.Body+': '+event.MsgID+' ('+event.From+' / '+event.Originated+')');        
 
+        if(closedGroup.get(event.From) == 1) {
+            console.log("back to open groupchat");
+            closedGroup.put(event.From, 0);
+
+            setConveration(callee);
+            updateChatWindow(callee); 
+        }
+
         // if the sender is not in call list, create a call log
         if(!msgHistory.get(event.From)) {
             assignNewCallLog(event.From);      
@@ -670,7 +701,7 @@ socket.on('chat', function(event){
         }
 
         const log = {
-            logType: 0,    // 1: sent, 0: receive
+            logType: 0,    // 0: receive, 1: sent, 2: notify 
             status: 0,     // 0: sent, 1: delivery, 2: display
             msg: event
         };
@@ -801,6 +832,8 @@ socket.on('chat', function(event){
         }
 
         else if(event.EvtType == 'join') {
+            console.log('join notififcation for '+event.From);
+
             participantList = participants.get(event.From);
             var joinedList = ''; 
             if(participantList != undefined && participants != undefined) {
@@ -822,9 +855,11 @@ socket.on('chat', function(event){
             else
                 msg = joinedList + ' have joined this chat';
 
+            console.log('joinlist: '+joinedList);
+
             const log = {
-                logType: 2,    // 1: sent, 0: receive, 2: notify 
-                status: 4,     // 0: sent, 1: delivery, 2: display, 3: notify
+                logType: 2,    // 0: receive, 1: sent, 2: notify 
+                status: 3,     // 0: sent, 1: delivery, 2: display, 3: notify
                 msg: msg
             };
             callLog = msgHistory.get(event.From);
@@ -835,7 +870,10 @@ socket.on('chat', function(event){
             }
         }
         else if(event.EvtType == 'depart') {
-            participantList = participants.get(callee);
+            console.log(event.Originated + ' has left from '+event.From)
+
+            // remove the left user
+            participantList = participants.get(event.From);
             if(participantList != undefined && participants != undefined) {
                 newParticipantList = new Array();
                 for(i=0;i<participantList.length;i++) {
@@ -843,21 +881,24 @@ socket.on('chat', function(event){
                         newParticipantList.push(participantList[i]);
                     }
                 }
-                participants.put(callee, newParticipantList);          
+                participants.put(event.From, newParticipantList);          
             }      
 
-            msg = members.get(event.Originated) + ' have left this chat';
-            
+            msg = event.Originated + ' has left this chat';
+
             const log = {
-                logType: 2,    // 1: sent, 0: receive, 2: notify 
-                status: 4,     // 0: sent, 1: delivery, 2: display, 3: notify
+                logType: 2,    // 0: receive, 1: send, 2: notify 
+                status: 3,     // 0: sent, 1: delivery, 2: display, 3: notify
                 msg: msg
             };
-            callLog = msgHistory.get(callee);
+            callLog = msgHistory.get(event.From);
             callLog.push(log);
         }
-        //updateChatWindow();
-        setConveration(callee);
+
+        if(callee == event.From) {
+            updateChatWindow(callee);
+            setConveration(callee);
+        }
         updateCalllog();
     }
 });
@@ -1010,17 +1051,17 @@ function updateChatWindow(from) {
             var date = new Date(callLog[i].msg.Timestamp * 1000);            
             var timestr = date.getHours() + ':' + date.getMinutes() + ':' + date.getSeconds();
 
-            if(callLog[i].logType == 1) { // sender
+            if(callLog[i].logType == 1) { // send
             //    console.log('i= ',i,' Text: ',callLog[i].msg.Body,' readcount: ',callLog[i].readCount)
                 addSentMessage(i-start,timestr,callLog[i].msg.Body,callLog[i].status,callLog[i].readCount);
             }
-            else if(callLog[i].logType == 0)  {  // receiver
+            else if(callLog[i].logType == 0)  {  // receive
                 if(callLog[i].msg.From[0] == 'g')
                     addReceivedMessage(i-start,members.get(callLog[i].msg.Originated),timestr,callLog[i].msg.Body);  
                 else
                     addReceivedMessage(i-start,members.get(callLog[i].msg.From),timestr,callLog[i].msg.Body);
             }
-            else if(callLog[i].logType == 2) {
+            else if(callLog[i].logType == 2) {  // notify
                 addNotifyMessage(callLog[i].msg);
             }
         }
