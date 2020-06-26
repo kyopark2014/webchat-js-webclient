@@ -203,7 +203,7 @@ function updateCalllog() {
         from = keys[i];
         
         if(callLog.length>0) {
-            if(callLog.logType == 0 || callLog.logType == 1) {  // send, receive
+            if(callLog[callLog.length-1].logType == 0 || callLog[callLog.length-1].logType == 1) {  // send, receive
                 var text = callLog[callLog.length-1].msg.Body;
                 var date = new Date(callLog[callLog.length-1].msg.Timestamp * 1000);
                 var timestr = date.getHours() + ':' + date.getMinutes() + ':' + date.getSeconds();
@@ -389,8 +389,16 @@ function RejoinGroupchat(event) {
 
 // getCurrentParticipants is to deliver the current participant list to "invite.js"
 function getCurrentParticipants() {
-    var participantList = participants.get(callee);
-    console.log("current: "+participantList)
+    if(callee[0] == 'g') {
+        var participantList = participants.get(callee);
+    }
+    else {
+        var participantList = new Array();
+        participantList.push(uid)
+        participantList.push(callee); 
+    }
+
+    console.log("current participants: "+participantList)
 
     return participantList;
 }
@@ -401,24 +409,32 @@ function addNewParticipant(addedparticipantList) {
 //    console.log('size: '+addedparticipantList.length);
 //    console.log("callee: ", callee);
 
-    var date = new Date();
-    var timestamp = Math.floor(date.getTime()/1000);
-        
-    const chatmsg = {
-        EvtType: "refer",
-        From: callee,
-        Originated: uid,
-        To: callee,
-        MsgID: "",
-        Timestamp: timestamp,
-        Body: JSON.stringify(addedparticipantList)
-    };
+    if(callee[0] == 'g') {
+        var date = new Date();
+        var timestamp = Math.floor(date.getTime()/1000);
+            
+        const chatmsg = {
+            EvtType: "refer",
+            From: callee,
+            Originated: uid,
+            To: callee,
+            MsgID: "",
+            Timestamp: timestamp,
+            Body: JSON.stringify(addedparticipantList)
+        };
 
-    const msgJSON = JSON.stringify(chatmsg);
-    
-    console.log('<-- refer: ' + addedparticipantList);
-    
-    socket.emit('chat', msgJSON);  // refer 
+        const msgJSON = JSON.stringify(chatmsg);
+        
+        console.log('<-- refer: ' + addedparticipantList);
+        
+        socket.emit('chat', msgJSON);  // refer 
+    }
+    else {  // upgrade from 1-to-1 to groupchat
+        participantList = addedparticipantList;
+        participantList.push(uid);
+        participantList.push(callee);
+        StartNewChat(participantList); 
+    }
 }
 
 // Listeners
@@ -429,7 +445,7 @@ message.addEventListener('keyup', function(e){
 });
 
 refreshCallLog.addEventListener('click', function(){
-    console.log('update callupdate call logs');
+    console.log('update call logs');
     updateCalllog();
 });
 
@@ -613,7 +629,7 @@ function setConveration(id) {
 
 function getNameofGroup(id, maxLength) {
     var participantList=participants.get(id);
-    // console.log('id: '+id + ' list: ' +participantList)
+    console.log('id: '+id + ' list: ' +participantList)
 
     if(participantList != undefined) {
         var index=0;
@@ -881,7 +897,17 @@ socket.on('chat', function(event){
                         newParticipantList.push(participantList[i]);
                     }
                 }
-                participants.put(event.From, newParticipantList);          
+
+                console.log("left number of users: ", newParticipantList.length)
+                if(newParticipantList.length == 1) {
+                    console.log("If the user is only left, close the groupchat");
+                    closedGroup.put(callee, 1);
+
+                    // TO-DO: unsubscribe request to close the dummy group
+                }
+                else {
+                    participants.put(event.From, newParticipantList);          
+                }
             }      
 
             msg = event.Originated + ' has left this chat';
@@ -892,6 +918,7 @@ socket.on('chat', function(event){
                 msg: msg
             };
             callLog = msgHistory.get(event.From);
+
             callLog.push(log);
         }
 
@@ -1023,7 +1050,7 @@ function addReceivedMessage(index, sender, timestr, msg) {
 //    console.log(msglist[index].innerHTML);   
 }
 
-function addNotifyMessage(msg) {
+function addNotifyMessage(index, msg) {
     msglist[index].innerHTML =  
         `<div class="notification-text">${msg}</div>`;     
 }
@@ -1034,7 +1061,6 @@ function updateChatWindow(from) {
         for (i=0;i<maxMsgItems;i++) {
             msglist[i].innerHTML = '';
         }
-        // msgIDX.clear();
 
         callee = from;
 
@@ -1062,7 +1088,7 @@ function updateChatWindow(from) {
                     addReceivedMessage(i-start,members.get(callLog[i].msg.From),timestr,callLog[i].msg.Body);
             }
             else if(callLog[i].logType == 2) {  // notify
-                addNotifyMessage(callLog[i].msg);
+                addNotifyMessage(i-start, callLog[i].msg);
             }
         }
 
