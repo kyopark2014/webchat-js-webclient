@@ -155,10 +155,25 @@ function uuidv4() {
 }
 ```
 
-#### NOTIFCATION
+#### Event Structure
 
 In order to simple management of message and notification, the body of event should use for message and notification which have different structure.
-So, the body of notification is required to marsharing as bellow.
+
+For groupchat, "Originated" is used to identify the sender since the sender is also a particiant in group participant. So, "From" is always the id of groupchat.
+
+```java
+const chatmsg = {
+            EvtType: "message",
+            From: From,
+            Originated: Originaterd,
+            To: callee,
+            MsgID: uuidv4(),
+            Timestamp: timestamp,
+            Body: message.value
+        };
+```
+
+The body of notification is required to marsharing as bellow. This code shows the notification for "create" in a groupchat.
 
 ```c
 const chatmsg = {
