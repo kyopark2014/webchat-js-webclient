@@ -9,6 +9,7 @@ $ docker run -d -p 8080:80 webclient:v1
 ```
 Then, run it using chrom browser. 
 
+
 ## Coversation Overview
 
 This design was inspired from "FilipRastovic" as described in reference.
@@ -21,6 +22,10 @@ This pciture shows a snap shot for group conversation where the call log is left
 
 The left side shows the call logs and right side shows message logs.
 For this calllist and msglist are used with msgHistory which saves all call and message history.
+
+#### Event Type
+
+Since message and notification are using a type of event, there are several event types: "message", "delivery" and "display" for message and "notify", "restart", "join" and "depart" for notification. The notificaton closes to the operation of groupchat where "notify" is similar to full notification in RCS. "restart" is a little bit special since the message client is based on a message driven event. since a group message can come from the server before "notify" which has a essential information for groupchat, the client can request the groupchat information from the client. It is an edge case but can happen in real mobile or wire network.   
 
 #### Call Log for history of conversation
 ```java
