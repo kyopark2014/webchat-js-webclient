@@ -25,7 +25,7 @@ For this calllist and msglist are used with msgHistory which saves all call and 
 
 #### Event Type
 
-Since message and notification are using a type of event, there are several event types: "message", "delivery" and "display" for message and "notify", "restart", "join" and "depart" for notification. The notificaton closes to the operation of groupchat where "notify" is similar to full notification in RCS. "restart" is a little bit special since the message client is based on a message driven event. since a group message can come from the server before "notify" which has a essential information for groupchat, the client can request the groupchat information from the client. It is an edge case but can happen in real mobile or wire network.   
+Since message and notification are using a type of event, there are several event types: "message", "delivery" and "display" for message and "notify", "restart", "join" and "depart" for notification. The notificaton closes to the operation of groupchat where "notify" is similar to full notification in RCS. "restart" is a little bit special since the message client is based on a message driven event. since a group message can come from the server before "notify" which has a essential information for groupchat, the client can request the groupchat information from the client. It is an edge case but can happen in real mobile or wire network.  The detail call flow for chatting is described in webchat server github: https://github.com/kyopark2014/webchat
 
 #### Call Log for history of conversation
 ```java
