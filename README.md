@@ -17,6 +17,61 @@ I appended java script to make a chat service. Also, several compoents were adde
 This pciture shows a snap shot for group conversation where the call log is left side and chat conversation is right side.
 ![image](https://user-images.githubusercontent.com/52392004/84659810-f4f38300-af52-11ea-9ed9-9bf4cd8cdc36.png)
 
+### Structure
+
+The left side shows the call logs and right side shows message logs.
+For this calllist and msglist are used with msgHistory which saves all call and message history.
+
+#### Call Log for history of conversation
+```java
+(function(index, name) {
+            list[index].addEventListener("click", function() {
+                console.log('--> chatroom: '+listIDX.get(name)+' ('+name+')');
+
+                if(name != callee) {
+                    callee = name;
+
+                    callLog = msgHistory.get(callee);                   
+                    for(i=callLog.length-1;i>=0;i--) {
+                        if(callLog[i].logType==0) {  // receive
+                            if(callLog[i].status==1) { // If display notification needs to send
+                                // console.log('send display notification: '+callLog[i].msg.MsgID);
+                                sendDisplayNoti(callLog[i].msg);
+                                callLog[i].status = 2;
+                            }
+                            else break;
+                        }
+                    }
+
+                    if(closedGroup.get(callee) == 1) {
+                        console.log(callee+' was closed previously');
+                        setConveration(name);
+                    } 
+                    else {
+                        setConveration(name);
+                    }
+
+                    updateChatWindow(name); 
+                } 
+            })
+        })(listIDX.get(from),from);
+```
+
+#### Message Log for history of chatting
+```java
+(function(index) {
+        msglist[index].addEventListener("click", function() {
+            console.log('click! index: '+index);
+
+            callLog = msgHistory.get(callee);
+            if(callLog.length < maxMsgItems) i = index;
+            else i = index + maxMsgItems;
+
+            console.log("index=",index+' readcount:', callLog[i].readCount + ' body:', callLog[i].msg.Body+ ' status:',callLog[i].status);
+        })
+    })(i);
+```
+
 #### Call Log
 
 Call Log shws the name of participants in chat room and the last message and received time. 
